@@ -71,6 +71,9 @@ Thumbs.db
 # Test and runtime artifacts
 coverage/
 .vitest/
+.vite/
+*.vite/
+frontend/.vite/
 *.log
 .temp/
 supabase/.temp/

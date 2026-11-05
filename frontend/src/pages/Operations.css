@@ -388,6 +388,17 @@
   cursor: not-allowed;
 }
 
+.orq-btn-sm-danger {
+  color: var(--color-danger, #ef4444);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.orq-btn-sm-danger:hover:not(:disabled) {
+  background-color: #fef2f2;
+  border-color: var(--color-danger, #ef4444);
+  color: #dc2626;
+}
+
 /* Modal Overlay & Forms */
 .orq-ops-modal-backdrop {
   position: fixed;

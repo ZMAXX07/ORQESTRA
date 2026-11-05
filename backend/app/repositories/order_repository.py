@@ -86,6 +86,11 @@ class BaseOrderRepository(ABC):
     ) -> OrderResponse:
         pass
 
+    @abstractmethod
+    async def product_has_orders(self, business_id: str, product_id: str) -> bool:
+        """Check if a product is referenced by any order items in the business."""
+        pass
+
 
 class InMemoryOrderRepository(BaseOrderRepository):
     """In-memory order repository with atomic transaction locks, stock deduction, and rollback."""
@@ -520,6 +525,16 @@ class InMemoryOrderRepository(BaseOrderRepository):
 
             return self._to_response(o)
 
+    async def product_has_orders(self, business_id: str, product_id: str) -> bool:
+        async with self._lock:
+            for order_id, items in self._order_items.items():
+                order = self._orders.get(order_id)
+                if order and order.get("business_id") == business_id:
+                    for item in items:
+                        if item.get("product_id") == product_id:
+                            return True
+            return False
+
 
 class SupabaseOrderRepository(BaseOrderRepository):
     """Database-backed order repository using PostgREST and atomic RPC functions."""
@@ -849,3 +864,18 @@ class SupabaseOrderRepository(BaseOrderRepository):
             if resp.status_code != 200:
                 raise RuntimeError(f"Cancel failed: {resp.text}")
         return await self.get_order(business_id, order_id)
+
+    async def product_has_orders(self, business_id: str, product_id: str) -> bool:
+        endpoint = f"{self.supabase_url}/rest/v1/order_items"
+        params = {
+            "business_id": f"eq.{business_id}",
+            "product_id": f"eq.{product_id}",
+            "select": "id",
+            "limit": "1",
+        }
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            resp = await client.get(endpoint, params=params, headers=self._headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                return len(data) > 0
+            return False

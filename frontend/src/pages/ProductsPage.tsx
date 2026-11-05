@@ -6,6 +6,8 @@ import {
   createProduct,
   updateProduct,
   deactivateProduct,
+  activateProduct,
+  deleteProduct,
 } from '../services/operations';
 import { Product, ProductCreateInput } from '../types/operations';
 import { formatCurrency, getCurrencySymbol } from '../utils/currencies';
@@ -54,6 +56,7 @@ export const ProductsPage: React.FC = () => {
   const [formCostPrice, setFormCostPrice] = useState('0.00');
   const [formStock, setFormStock] = useState('0');
   const [formThreshold, setFormThreshold] = useState('5');
+  const [formIsActive, setFormIsActive] = useState<boolean>(true);
   const [formError, setFormError] = useState<string | null>(null);
 
   const loadProducts = useCallback(async () => {
@@ -111,6 +114,7 @@ export const ProductsPage: React.FC = () => {
     setFormDesc(product.description || '');
     setFormUnitPrice(product.unit_price);
     setFormCostPrice(product.cost_price || '0.00');
+    setFormIsActive(product.is_active);
     setFormError(null);
   };
 
@@ -179,6 +183,7 @@ export const ProductsPage: React.FC = () => {
         description: formDesc.trim() || undefined,
         unit_price: price.toFixed(2),
         cost_price: parseFloat(formCostPrice) ? parseFloat(formCostPrice).toFixed(2) : undefined,
+        is_active: formIsActive,
       });
 
       setEditingProduct(null);
@@ -189,6 +194,18 @@ export const ProductsPage: React.FC = () => {
       setFormError(err instanceof Error ? err.message : 'Failed to update product');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleActivate = async (product: Product) => {
+    if (!token || !businessId) return;
+    try {
+      await activateProduct(token, businessId, product.id);
+      setSuccessMsg(`Product "${product.name}" activated.`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+      await loadProducts();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to activate product');
     }
   };
 
@@ -206,6 +223,23 @@ export const ProductsPage: React.FC = () => {
       await loadProducts();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to deactivate product');
+    }
+  };
+
+  const handleDelete = async (product: Product) => {
+    if (!token || !businessId) return;
+    const confirmed = window.confirm(
+      `Are you sure you want to delete product "${product.name}" (${product.sku})? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteProduct(token, businessId, product.id);
+      setSuccessMsg(`Product "${product.name}" deleted successfully.`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+      await loadProducts();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete product');
     }
   };
 
@@ -390,7 +424,7 @@ export const ProductsPage: React.FC = () => {
                           >
                             Edit
                           </button>
-                          {p.is_active && (
+                          {p.is_active ? (
                             <button
                               type="button"
                               className="orq-btn-sm"
@@ -398,7 +432,22 @@ export const ProductsPage: React.FC = () => {
                             >
                               Deactivate
                             </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="orq-btn-sm"
+                              onClick={() => handleActivate(p)}
+                            >
+                              Activate
+                            </button>
                           )}
+                          <button
+                            type="button"
+                            className="orq-btn-sm orq-btn-sm-danger"
+                            onClick={() => handleDelete(p)}
+                          >
+                            Delete
+                          </button>
                         </>
                       )}
                     </div>
@@ -614,6 +663,17 @@ export const ProductsPage: React.FC = () => {
                     onChange={(e) => setFormCostPrice(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className="orq-form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)' }}>
+                  <input
+                    type="checkbox"
+                    checked={formIsActive}
+                    onChange={(e) => setFormIsActive(e.target.checked)}
+                  />
+                  <span>Active in Catalog</span>
+                </label>
               </div>
 
               <div className="orq-form-actions">

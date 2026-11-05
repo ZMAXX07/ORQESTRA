@@ -35,6 +35,8 @@ vi.mock('../src/services/operations', () => ({
   createProduct: vi.fn(),
   updateProduct: vi.fn(),
   deactivateProduct: vi.fn(),
+  activateProduct: vi.fn(),
+  deleteProduct: vi.fn(),
   fetchInventory: vi.fn(),
   fetchStockMovements: vi.fn(),
   adjustStock: vi.fn(),
@@ -154,6 +156,112 @@ describe('Phase 3 Operations Frontend Components', () => {
           })
         );
       });
+    });
+
+    it('renders Activate button for inactive products and activates on click', async () => {
+      vi.mocked(operationsApi.fetchProducts).mockResolvedValue({
+        items: [
+          {
+            id: 'prod-inactive',
+            business_id: 'biz-1',
+            sku: 'KEYBOARD',
+            name: 'Laptop',
+            description: '',
+            unit_price: '50000.00',
+            is_active: false,
+            quantity_on_hand: 100,
+            reorder_threshold: 5,
+            is_low_stock: false,
+            created_at: '2026-10-23T00:00:00Z',
+            updated_at: '2026-10-23T00:00:00Z',
+          },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 20,
+      });
+
+      vi.mocked(operationsApi.activateProduct).mockResolvedValueOnce({
+        id: 'prod-inactive',
+        business_id: 'biz-1',
+        sku: 'KEYBOARD',
+        name: 'Laptop',
+        description: '',
+        unit_price: '50000.00',
+        is_active: true,
+        quantity_on_hand: 100,
+        reorder_threshold: 5,
+        is_low_stock: false,
+        created_at: '2026-10-23T00:00:00Z',
+        updated_at: '2026-10-23T00:00:00Z',
+      });
+
+      render(<ProductsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Laptop')).toBeInTheDocument();
+        expect(screen.getByText('Inactive')).toBeInTheDocument();
+      });
+
+      const activateBtn = screen.getByRole('button', { name: 'Activate' });
+      expect(activateBtn).toBeInTheDocument();
+      fireEvent.click(activateBtn);
+
+      await waitFor(() => {
+        expect(operationsApi.activateProduct).toHaveBeenCalledWith(
+          'fake-jwt-token',
+          'biz-1',
+          'prod-inactive'
+        );
+      });
+    });
+
+    it('renders Delete button and deletes product on user confirmation', async () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      vi.mocked(operationsApi.fetchProducts).mockResolvedValue({
+        items: [
+          {
+            id: 'prod-del-1',
+            business_id: 'biz-1',
+            sku: 'KEYBOARD',
+            name: 'Laptop',
+            description: '',
+            unit_price: '50000.00',
+            is_active: false,
+            quantity_on_hand: 100,
+            reorder_threshold: 5,
+            is_low_stock: false,
+            created_at: '2026-10-23T00:00:00Z',
+            updated_at: '2026-10-23T00:00:00Z',
+          },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 20,
+      });
+
+      vi.mocked(operationsApi.deleteProduct).mockResolvedValueOnce(undefined);
+
+      render(<ProductsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Laptop')).toBeInTheDocument();
+      });
+
+      const deleteBtn = screen.getByRole('button', { name: 'Delete' });
+      expect(deleteBtn).toBeInTheDocument();
+      fireEvent.click(deleteBtn);
+
+      await waitFor(() => {
+        expect(operationsApi.deleteProduct).toHaveBeenCalledWith(
+          'fake-jwt-token',
+          'biz-1',
+          'prod-del-1'
+        );
+      });
+
+      vi.restoreAllMocks();
     });
   });
 

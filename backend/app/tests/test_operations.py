@@ -157,6 +157,65 @@ def test_product_lifecycle(ops_test_client):
     assert deact_res.status_code == 200
     assert not deact_res.json()["is_active"]
 
+    # 8. Staff cannot activate or delete product -> 403
+    staff_act_res = client.patch(f"/api/v1/products/{prod_id}/activate", headers=staff_hdr)
+    assert staff_act_res.status_code == 403
+    staff_del_res = client.delete(f"/api/v1/products/{prod_id}", headers=staff_hdr)
+    assert staff_del_res.status_code == 403
+
+    # 9. Admin activates product -> 200, is_active is True
+    act_res = client.patch(f"/api/v1/products/{prod_id}/activate", headers=admin_hdr)
+    assert act_res.status_code == 200
+    assert act_res.json()["is_active"] is True
+
+    # 10. Admin deletes product without orders -> 204
+    del_res = client.delete(f"/api/v1/products/{prod_id}", headers=admin_hdr)
+    assert del_res.status_code == 204
+
+    # 11. Fetching deleted product returns 404
+    get_del_res = client.get(f"/api/v1/products/{prod_id}", headers=admin_hdr)
+    assert get_del_res.status_code == 404
+
+
+def test_product_with_orders_cannot_be_deleted(ops_test_client):
+    """Verify that a product referenced by orders cannot be deleted (returns 409)."""
+    client = ops_test_client["client"]
+    admin_hdr = auth_header(USER_ADMIN_ID, BUSINESS_ALPHA_ID)
+
+    # 1. Create product
+    prod_res = client.post(
+        "/api/v1/products",
+        json={"sku": "PROD-ORDERED-01", "name": "Protected Product", "unit_price": "50.00", "initial_stock": 10},
+        headers=admin_hdr,
+    )
+    assert prod_res.status_code == 201
+    prod_id = prod_res.json()["id"]
+
+    # 2. Create customer
+    cust_res = client.post(
+        "/api/v1/customers",
+        json={"name": "Protected Order Client", "email": "client@example.com"},
+        headers=admin_hdr,
+    )
+    assert cust_res.status_code == 201
+    cust_id = cust_res.json()["id"]
+
+    # 3. Create order containing the product
+    ord_res = client.post(
+        "/api/v1/orders",
+        json={
+            "customer_id": cust_id,
+            "items": [{"product_id": prod_id, "quantity": 2, "unit_price": "50.00"}],
+        },
+        headers=admin_hdr,
+    )
+    assert ord_res.status_code == 201
+
+    # 4. Attempt to delete product -> 409 Conflict
+    del_res = client.delete(f"/api/v1/products/{prod_id}", headers=admin_hdr)
+    assert del_res.status_code == 409
+    assert "Cannot delete product with existing order history" in del_res.json()["error"]["message"]
+
 
 # ==============================================================================
 # Inventory & Stock Adjustment Tests

@@ -143,6 +143,26 @@ export async function deactivateProduct(
   });
 }
 
+export async function activateProduct(
+  token: string,
+  businessId: string,
+  productId: string
+): Promise<Product> {
+  return request<Product>(`/api/v1/products/${productId}/activate`, token, businessId, {
+    method: 'PATCH',
+  });
+}
+
+export async function deleteProduct(
+  token: string,
+  businessId: string,
+  productId: string
+): Promise<void> {
+  return request<void>(`/api/v1/products/${productId}`, token, businessId, {
+    method: 'DELETE',
+  });
+}
+
 // -----------------------------------------------------------------------------
 // Inventory
 // -----------------------------------------------------------------------------

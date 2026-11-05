@@ -53,6 +53,19 @@ class BaseProductRepository(ABC):
     ) -> Optional[ProductResponse]:
         pass
 
+    @abstractmethod
+    async def activate_product(
+        self, business_id: str, product_id: str, user_id: str
+    ) -> Optional[ProductResponse]:
+        pass
+
+    @abstractmethod
+    async def delete_product(
+        self, business_id: str, product_id: str
+    ) -> bool:
+        """Permanently delete a product and its associated inventory/movements."""
+        pass
+
 
 class InMemoryProductRepository(BaseProductRepository):
     """In-memory product and linked inventory repository for testing."""
@@ -219,6 +232,31 @@ class InMemoryProductRepository(BaseProductRepository):
             p["is_active"] = False
             p["updated_at"] = datetime.now(timezone.utc)
             return self._to_response(p)
+
+    async def activate_product(
+        self, business_id: str, product_id: str, user_id: str
+    ) -> Optional[ProductResponse]:
+        async with self._lock:
+            p = self._products.get(product_id)
+            if not p or p["business_id"] != business_id:
+                return None
+            p["is_active"] = True
+            p["updated_at"] = datetime.now(timezone.utc)
+            return self._to_response(p)
+
+    async def delete_product(self, business_id: str, product_id: str) -> bool:
+        async with self._lock:
+            p = self._products.get(product_id)
+            if not p or p["business_id"] != business_id:
+                return False
+            del self._products[product_id]
+            self._inventory.pop((business_id, product_id), None)
+            self._movements = [
+                m
+                for m in self._movements
+                if not (m["business_id"] == business_id and m["product_id"] == product_id)
+            ]
+            return True
 
 
 class SupabaseProductRepository(BaseProductRepository):
@@ -424,3 +462,31 @@ class SupabaseProductRepository(BaseProductRepository):
         self, business_id: str, product_id: str, user_id: str
     ) -> Optional[ProductResponse]:
         return await self.update_product(business_id, product_id, ProductUpdate(is_active=False), user_id)
+
+    async def activate_product(
+        self, business_id: str, product_id: str, user_id: str
+    ) -> Optional[ProductResponse]:
+        return await self.update_product(business_id, product_id, ProductUpdate(is_active=True), user_id)
+
+    async def delete_product(self, business_id: str, product_id: str) -> bool:
+        existing = await self.get_product(business_id, product_id)
+        if not existing:
+            return False
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            mov_endpoint = f"{self.supabase_url}/rest/v1/stock_movements"
+            mov_params = {"business_id": f"eq.{business_id}", "product_id": f"eq.{product_id}"}
+            await client.delete(mov_endpoint, params=mov_params, headers=self._headers)
+
+            inv_endpoint = f"{self.supabase_url}/rest/v1/inventory"
+            inv_params = {"business_id": f"eq.{business_id}", "product_id": f"eq.{product_id}"}
+            await client.delete(inv_endpoint, params=inv_params, headers=self._headers)
+
+            endpoint = f"{self.supabase_url}/rest/v1/products"
+            params = {"business_id": f"eq.{business_id}", "id": f"eq.{product_id}"}
+            resp = await client.delete(endpoint, params=params, headers=self._headers)
+            if resp.status_code in (200, 204):
+                return True
+            if "violates foreign key constraint" in resp.text or resp.status_code == 409:
+                raise ValueError("Cannot delete product because it is referenced by existing orders.")
+            raise RuntimeError(f"Failed to delete product: {resp.status_code} {resp.text}")

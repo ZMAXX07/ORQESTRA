@@ -5,10 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from backend.app.api.deps import (
     get_audit_repository,
     get_current_user,
+    get_order_repository,
     get_product_repository,
     require_business_role,
 )
 from backend.app.repositories.audit_repository import BaseAuditLogRepository
+from backend.app.repositories.order_repository import BaseOrderRepository
 from backend.app.repositories.product_repository import BaseProductRepository
 from backend.app.schemas.auth import AuthenticatedUser, BusinessMembership
 from backend.app.schemas.products import (
@@ -171,3 +173,79 @@ async def deactivate_product(
         new_values={"is_active": False},
     )
     return deactivated
+
+
+@router.patch(
+    "/{product_id}/activate",
+    response_model=ProductResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Activate Product",
+    description="Reactivates an inactive product in the business catalog.",
+)
+async def activate_product(
+    product_id: str,
+    membership: BusinessMembership = Depends(require_business_role("admin")),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    product_repo: BaseProductRepository = Depends(get_product_repository),
+    audit_repo: BaseAuditLogRepository = Depends(get_audit_repository),
+) -> ProductResponse:
+    activated = await product_repo.activate_product(
+        business_id=membership.business_id,
+        product_id=product_id,
+        user_id=current_user.user_id,
+    )
+    if not activated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    await audit_repo.log_event(
+        business_id=membership.business_id,
+        user_id=current_user.user_id,
+        action="product.activated",
+        entity_type="products",
+        entity_id=product_id,
+        new_values={"is_active": True},
+    )
+    return activated
+
+
+@router.delete(
+    "/{product_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete Product",
+    description="Permanently delete a product if it has no associated orders. Fails with 409 if referenced in order history.",
+)
+async def delete_product(
+    product_id: str,
+    membership: BusinessMembership = Depends(require_business_role("admin")),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    product_repo: BaseProductRepository = Depends(get_product_repository),
+    order_repo: BaseOrderRepository = Depends(get_order_repository),
+    audit_repo: BaseAuditLogRepository = Depends(get_audit_repository),
+):
+    prod = await product_repo.get_product(membership.business_id, product_id)
+    if not prod:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    has_orders = await order_repo.product_has_orders(membership.business_id, product_id)
+    if has_orders:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete product with existing order history. Deactivate the product instead.",
+        )
+
+    try:
+        deleted = await product_repo.delete_product(membership.business_id, product_id)
+        if not deleted:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+
+    await audit_repo.log_event(
+        business_id=membership.business_id,
+        user_id=current_user.user_id,
+        action="product.deleted",
+        entity_type="products",
+        entity_id=product_id,
+        old_values={"sku": prod.sku, "name": prod.name},
+    )
+    return None
