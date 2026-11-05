@@ -1,0 +1,203 @@
+/* ==============================================================================
+   CREATE BUSINESS ONBOARDING MODAL STYLES
+   Redesigned to match the reference aesthetic: Frosted Glass, 24px Card Radii,
+   Obsidian High-Contrast Action Buttons, and Responsive Fluidity.
+   ============================================================================== */
+
+.orq-onboarding-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(18, 20, 26, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 550;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.orq-onboarding-container {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - var(--space-8));
+  max-height: calc(100dvh - var(--space-8));
+  margin: auto;
+}
+
+.orq-onboarding-card {
+  box-shadow: 0 24px 60px -8px rgba(120, 105, 145, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-height: calc(100dvh - var(--space-8));
+  overflow-y: auto;
+}
+
+.orq-onboarding-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.orq-onboarding-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.orq-onboarding-logo {
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(120, 105, 145, 0.16));
+}
+
+.orq-onboarding-subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 3px;
+  line-height: var(--line-height-normal);
+}
+
+.orq-onboarding-alert {
+  margin-bottom: var(--space-4);
+}
+
+.orq-onboarding-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.orq-required-mark {
+  color: var(--color-error-text);
+  font-weight: var(--font-weight-bold);
+}
+
+.orq-slug-input-wrap {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  min-height: 42px;
+  box-sizing: border-box;
+  background-color: rgba(248, 247, 253, 0.75);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  overflow: hidden;
+}
+
+.orq-slug-input-wrap:focus-within {
+  background-color: #ffffff;
+  border-color: var(--color-obsidian);
+  box-shadow: var(--focus-ring);
+}
+
+.orq-slug-prefix {
+  padding-left: var(--space-3);
+  padding-right: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-family-mono);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.orq-slug-field {
+  border: none !important;
+  background: transparent !important;
+  padding-left: 0 !important;
+  box-shadow: none !important;
+  font-family: var(--font-family-mono);
+  height: 100% !important;
+  line-height: 20px !important;
+  box-sizing: border-box !important;
+}
+
+.orq-field-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error-text);
+  font-weight: var(--font-weight-semibold);
+  margin-top: 2px;
+}
+
+.orq-form-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.orq-onboarding-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  padding: var(--space-3) var(--space-4);
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: #4338ca;
+}
+
+.orq-onboarding-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #4338ca;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: orq-spin 0.65s linear infinite;
+}
+
+.orq-onboarding-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+  flex-wrap: wrap;
+}
+
+.orq-onboarding-signout-btn {
+  font-size: var(--font-size-xs);
+}
+
+@media (max-width: 640px) {
+  .orq-onboarding-backdrop {
+    padding: var(--space-2);
+  }
+
+  .orq-onboarding-card {
+    border-radius: var(--radius-xl);
+  }
+
+  .orq-onboarding-header {
+    padding: var(--space-4) var(--space-4);
+  }
+
+  .orq-onboarding-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .orq-onboarding-actions button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 390px) {
+  .orq-slug-prefix {
+    display: none;
+  }
+
+  .orq-slug-field {
+    padding-left: var(--space-3) !important;
+  }
+}

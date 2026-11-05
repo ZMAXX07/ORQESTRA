@@ -1,0 +1,66 @@
+/* Accessible Pagination Styles matching Orqestra Design Tokens */
+.orq-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3-5) var(--space-5);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--color-border-subtle);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  flex-wrap: wrap;
+}
+
+.orq-pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(246, 248, 253, 0.8);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.orq-pagination-number {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-mono);
+}
+
+.orq-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.orq-pagination-current {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xs);
+}
+
+@media (max-width: 640px) {
+  .orq-pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .orq-pagination-info {
+    justify-content: center;
+  }
+
+  .orq-pagination-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .orq-pagination-controls button {
+    min-height: 40px;
+    padding: var(--space-2) var(--space-4);
+  }
+}

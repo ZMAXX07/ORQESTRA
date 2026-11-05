@@ -1,0 +1,6 @@
+-- ==============================================================================
+-- ORQESTRA DATABASE SEED SCRIPT (NON-PRODUCTION / LOCAL REFERENCE ONLY)
+-- ==============================================================================
+-- Production Note: Never run seed scripts against production environments.
+-- For local development with Supabase CLI, this script provides clean guidance.
+-- Real user accounts must be created through Supabase Auth (auth.users).

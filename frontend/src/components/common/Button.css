@@ -1,0 +1,103 @@
+.orq-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.01em;
+  transition: all var(--transition-fast);
+  line-height: var(--line-height-normal);
+  text-decoration: none;
+  white-space: nowrap;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.orq-button--sm {
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--font-size-xs);
+  min-height: 34px;
+  border-radius: var(--radius-sm);
+}
+
+.orq-button--md {
+  padding: var(--space-2-5) var(--space-4);
+  font-size: var(--font-size-sm);
+  min-height: 42px;
+}
+
+/* Reference High-Contrast Obsidian Button */
+.orq-button--primary {
+  background-color: var(--color-obsidian);
+  color: var(--color-text-inverse);
+  border-color: var(--color-obsidian);
+  box-shadow: 0 4px 14px rgba(18, 20, 26, 0.15);
+}
+
+.orq-button--primary:hover:not(:disabled) {
+  background-color: var(--color-obsidian-hover);
+  border-color: var(--color-obsidian-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(18, 20, 26, 0.22);
+}
+
+.orq-button--primary:active:not(:disabled) {
+  background-color: var(--color-obsidian-active);
+  transform: translateY(0);
+}
+
+.orq-button--secondary {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+  box-shadow: var(--shadow-xs);
+  backdrop-filter: blur(8px);
+}
+
+.orq-button--secondary:hover:not(:disabled) {
+  background-color: #ffffff;
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.orq-button--outline {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-default);
+}
+
+.orq-button--outline:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.orq-button-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: orq-spin 0.6s linear infinite;
+}
+
+@keyframes orq-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .orq-button--sm {
+    min-height: 40px;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .orq-button--md {
+    min-height: 44px;
+    padding: var(--space-2-5) var(--space-4);
+  }
+}

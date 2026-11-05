@@ -1,0 +1,86 @@
+/* Realtime Connection Status Warning Badge */
+.orq-realtime-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: 3px var(--space-2-5);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.01em;
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.orq-realtime-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.orq-realtime-badge.is-connected {
+  border-color: #a7f3d0;
+  background-color: #ecfdf5;
+  color: #065f46;
+}
+
+.orq-realtime-badge.is-connected .orq-realtime-indicator {
+  background-color: #10b981;
+}
+
+.orq-realtime-badge.is-connecting {
+  border-color: #fed7aa;
+  background-color: #fff7ed;
+  color: #9a3412;
+}
+
+.orq-realtime-badge.is-connecting .orq-realtime-indicator {
+  background-color: #f97316;
+}
+
+.orq-realtime-badge.is-warning,
+.orq-realtime-badge.is-error {
+  border-color: #fecdd3;
+  background-color: #fff1f2;
+  color: #9f1239;
+}
+
+.orq-realtime-badge.is-warning .orq-realtime-indicator,
+.orq-realtime-badge.is-error .orq-realtime-indicator {
+  background-color: #e11d48;
+}
+
+.orq-realtime-badge.is-disconnected {
+  border-color: var(--color-border-subtle);
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-muted);
+}
+
+.orq-realtime-badge.is-disconnected .orq-realtime-indicator {
+  background-color: #9ca3af;
+}
+
+.orq-realtime-retry-btn {
+  background: #ffffff;
+  border: 1px solid #fda4af;
+  color: #9f1239;
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-left: var(--space-1);
+  transition: background-color var(--transition-fast);
+}
+
+.orq-realtime-retry-btn:hover {
+  background-color: #ffe4e6;
+}
+
+.orq-realtime-retry-btn:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
+}

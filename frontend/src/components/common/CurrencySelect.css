@@ -1,0 +1,230 @@
+/**
+ * Styles for Searchable CurrencySelect Component
+ * Crystal-clear readability, high contrast, obsidian & glassmorphism compatible.
+ * Fixes cross-platform browser option white-on-white text issues.
+ */
+
+.orq-currency-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+/* 1. Search Filter Box */
+.orq-currency-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.orq-currency-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.orq-currency-search-input {
+  font-size: 13px !important;
+  padding: 9px 64px 9px 36px !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: var(--radius-md, 10px) !important;
+  color: #0f172a !important;
+  font-weight: 500 !important;
+  width: 100% !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  line-height: 20px !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  outline: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.15s ease !important;
+}
+
+.orq-currency-search-input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+}
+
+.orq-currency-search-input:focus {
+  background-color: #ffffff !important;
+  border-color: #12141a !important;
+  box-shadow: 0 0 0 2px rgba(18, 20, 26, 0.15) !important;
+}
+
+.orq-currency-search-meta {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.orq-currency-count-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  background-color: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.orq-currency-clear-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 3px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.orq-currency-clear-btn:hover {
+  color: #0f172a;
+  background-color: #f1f5f9;
+}
+
+/* 2. Dropdown Select - High-contrast & razor sharp */
+.orq-currency-dropdown {
+  width: 100%;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: var(--radius-md, 10px) !important;
+  color: #0f172a !important;
+  padding: 10px 14px;
+  min-height: 44px; /* Touch target accessibility */
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.orq-currency-dropdown:focus {
+  border-color: #12141a !important;
+  box-shadow: 0 0 0 3px rgba(18, 20, 26, 0.15) !important;
+}
+
+/* Critical: Ensure options are dark text on white across all browsers/OSes */
+.orq-currency-dropdown option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+}
+
+/* 3. Quick Select Chips */
+.orq-currency-shortcuts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.orq-currency-shortcuts-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-right: 2px;
+}
+
+.orq-currency-chip {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-full, 9999px);
+  color: #334155;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orq-currency-chip:hover:not(:disabled) {
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.orq-currency-chip.is-active {
+  background-color: #12141a;
+  border-color: #12141a;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(18, 20, 26, 0.2);
+}
+
+.orq-currency-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 4. Live Sample Preview */
+.orq-currency-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: var(--radius-md, 10px);
+  font-size: 12px;
+}
+
+.orq-currency-preview-code {
+  color: #4338ca;
+  font-weight: 700;
+  font-family: var(--font-family-mono, monospace);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #e0e7ff;
+}
+
+.orq-currency-preview-sample {
+  color: #475569;
+  font-size: 12px;
+}
+
+.orq-currency-preview-sample strong {
+  color: #12141a;
+  font-weight: 700;
+  font-family: var(--font-family-mono, monospace);
+  margin-left: 6px;
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .orq-currency-preview {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

@@ -1,0 +1,141 @@
+/* ==============================================================================
+   ORQESTRA DESIGN SYSTEM TOKENS
+   Inspired by Reference Aesthetic: Luminous Diffuse Pastels, Translucent Glass,
+   Soft Periwinkle & Rose Gradients, Deep Obsidian Contrasts, and Fluid Sizing.
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Canvas Background: Clean, restrained neutral surface with subtle ambient depth */
+  --color-bg-base: #f8fafc;
+  --bg-ambient-gradient: #f8fafc;
+
+  /* Surfaces & Neutral Refinement */
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-solid: #ffffff;
+  --color-bg-subtle: #f1f5f9;
+  --color-bg-muted: #e2e8f0;
+  --color-bg-alt: #f8fafc;
+
+  /* Restrained Card Treatments */
+  --gradient-card-hero: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-card-subtle: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-rose: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  --gradient-periwinkle: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  --gradient-track: linear-gradient(90deg, #93c5fd 0%, #fca5a5 100%);
+
+  /* Borders & Glass Outlines */
+  --color-border-subtle: #e2e8f0;
+  --color-border-default: #cbd5e1;
+  --color-border-strong: #94a3b8;
+  --color-border-glass: rgba(255, 255, 255, 0.95);
+
+  /* High Contrast Typography */
+  --color-text-primary: #12141a;       /* Deep charcoal obsidian */
+  --color-text-secondary: #575a6e;     /* Refined slate-mauve */
+  --color-text-muted: #85889e;         /* Soft muted caption */
+  --color-text-inverse: #ffffff;       /* Pure white on obsidian */
+
+  /* High-Contrast Interactive Colors (Reference Button Obsidian) */
+  --color-obsidian: #12141a;
+  --color-obsidian-hover: #222634;
+  --color-obsidian-active: #0a0b0e;
+
+  /* Brand Primary & Interactive Palette */
+  --color-brand-primary: #12141a;      /* Primary high-contrast button */
+  --color-brand-hover: #222634;
+  --color-brand-active: #0a0b0e;
+  --color-brand-subtle: #eef2ff;
+  --color-brand-accent: #6366f1;       /* Indigo/Periwinkle accent */
+
+  --color-brand-header: rgba(255, 255, 255, 0.88);
+
+  /* Reference Pastels */
+  --color-periwinkle-light: #eef2ff;
+  --color-periwinkle-base: #a5b4fc;
+  --color-periwinkle-dark: #4338ca;
+
+  --color-rose-light: #fff1f2;
+  --color-rose-base: #fca5a5;
+  --color-rose-dark: #be123c;
+
+  /* Status Colors */
+  --color-success-bg: #f0fdf4;
+  --color-success-border: #bbf7d0;
+  --color-success-text: #15803d;
+
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #b45309;
+
+  --color-error-bg: #fff1f2;
+  --color-error-border: #fecdd3;
+  --color-error-text: #be123c;
+
+  --color-deferred-bg: #f8fafc;
+  --color-deferred-border: #cbd5e1;
+  --color-deferred-text: #475569;
+
+  /* Typography Scale */
+  --font-family-base: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-md: 1.125rem;    /* 18px */
+  --font-size-lg: 1.25rem;     /* 20px */
+  --font-size-xl: 1.5rem;      /* 24px */
+  --font-size-2xl: 1.875rem;   /* 30px */
+  --font-size-3xl: 2.25rem;    /* 36px */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+
+  /* Spacing Scale */
+  --space-0-5: 0.125rem; /* 2px */
+  --space-1: 0.25rem;    /* 4px */
+  --space-1-5: 0.375rem; /* 6px */
+  --space-2: 0.5rem;     /* 8px */
+  --space-2-5: 0.625rem; /* 10px */
+  --space-3: 0.75rem;    /* 12px */
+  --space-3-5: 0.875rem; /* 14px */
+  --space-4: 1rem;       /* 16px */
+  --space-5: 1.25rem;    /* 20px */
+  --space-6: 1.5rem;     /* 24px */
+  --space-8: 2rem;       /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+
+  /* Modern Curved Radii matching the Reference Design */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-card: 24px;
+  --radius-pill: 9999px;
+
+  /* Diffuse Ambient Shadows */
+  --shadow-xs: 0 1px 3px rgba(120, 105, 145, 0.04);
+  --shadow-sm: 0 3px 10px rgba(120, 105, 145, 0.05);
+  --shadow-md: 0 8px 24px -2px rgba(120, 105, 145, 0.07);
+  --shadow-card: 0 12px 32px -4px rgba(120, 105, 145, 0.08), 0 2px 6px -1px rgba(120, 105, 145, 0.03);
+  --shadow-card-hover: 0 16px 36px -4px rgba(120, 105, 145, 0.12), 0 4px 12px -2px rgba(120, 105, 145, 0.05);
+  --shadow-lg: 0 20px 45px -6px rgba(120, 105, 145, 0.14);
+
+  /* Focus Indicator with soft periwinkle ring */
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #a5b4fc;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}

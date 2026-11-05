@@ -1,0 +1,103 @@
+.orq-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: 3px var(--space-2-5);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  vertical-align: middle;
+}
+
+.orq-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.orq-badge--operational {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.orq-badge--operational .orq-badge-dot {
+  background-color: #10b981;
+}
+
+.orq-badge--degraded {
+  background-color: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+.orq-badge--degraded .orq-badge-dot {
+  background-color: #f43f5e;
+}
+
+.orq-badge--not_connected,
+.orq-badge--not_configured {
+  background-color: rgba(243, 244, 246, 0.85);
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
+.orq-badge--not_connected .orq-badge-dot,
+.orq-badge--not_configured .orq-badge-dot {
+  background-color: #9ca3af;
+}
+
+.orq-badge--connected {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.orq-badge--connected .orq-badge-dot {
+  background-color: #10b981;
+}
+
+.orq-badge--unavailable {
+  background-color: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.orq-badge--unavailable .orq-badge-dot {
+  background-color: #f59e0b;
+}
+
+.orq-badge--error {
+  background-color: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+.orq-badge--error .orq-badge-dot {
+  background-color: #f43f5e;
+}
+
+.orq-badge--neutral {
+  background-color: rgba(245, 243, 252, 0.85);
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-secondary);
+}
+
+.orq-badge--neutral .orq-badge-dot {
+  background-color: var(--color-text-muted);
+}
+
+.orq-badge--info {
+  background-color: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+.orq-badge--info .orq-badge-dot {
+  background-color: #6366f1;
+}
