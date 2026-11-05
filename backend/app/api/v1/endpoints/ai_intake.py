@@ -3,10 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.app.api.deps import (
+    check_ai_rate_limit,
     get_ai_intake_service,
     get_customer_repository,
     get_product_repository,
-    require_business_role,
 )
 from backend.app.repositories.customer_repository import BaseCustomerRepository
 from backend.app.repositories.product_repository import BaseProductRepository
@@ -30,7 +30,7 @@ router = APIRouter()
 )
 async def extract_order_from_message(
     request: OrderIntakeRequest,
-    membership: BusinessMembership = Depends(require_business_role("staff")),
+    membership: BusinessMembership = Depends(check_ai_rate_limit),
     ai_service: AIIntakeService = Depends(get_ai_intake_service),
     product_repo: BaseProductRepository = Depends(get_product_repository),
     customer_repo: BaseCustomerRepository = Depends(get_customer_repository),

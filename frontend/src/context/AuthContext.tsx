@@ -70,8 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    let isMounted = true;
+
     // 1. Initial session restoration
     supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
+      if (!isMounted) return;
       if (error) {
         setAuthError(error.message);
       }
@@ -85,7 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (initialSession?.access_token) {
         verifyWithBackend(initialSession.access_token).finally(() => {
-          setIsLoading(false);
+          if (isMounted) {
+            setIsLoading(false);
+          }
         });
       } else {
         setIsLoading(false);
@@ -95,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 2. Auth state subscription (sign in, sign out, token refresh, password recovery)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        if (!isMounted) return;
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
@@ -108,11 +114,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else if (currentSession?.access_token) {
           await verifyWithBackend(currentSession.access_token);
         }
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [verifyWithBackend]);

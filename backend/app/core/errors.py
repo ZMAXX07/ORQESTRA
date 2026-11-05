@@ -62,6 +62,10 @@ def register_error_handlers(app: FastAPI) -> None:
             message = str(exc.detail)
             details = None
 
+        response_headers = _cors_headers_for_request(request)
+        if exc.headers:
+            response_headers.update(exc.headers)
+
         return JSONResponse(
             status_code=exc.status_code,
             content={
@@ -71,7 +75,7 @@ def register_error_handlers(app: FastAPI) -> None:
                     "details": details,
                 }
             },
-            headers=_cors_headers_for_request(request),
+            headers=response_headers,
         )
 
     @app.exception_handler(RequestValidationError)

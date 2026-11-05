@@ -118,7 +118,7 @@ describe('Supabase Realtime Subscriptions & Lifecycle (Phase 4)', () => {
       expect.any(Object)
     );
 
-    // Verifies postgres_changes subscriptions for all 4 operational tables with tenant filter
+    // Verifies postgres_changes subscriptions for all 5 operational tables with tenant filter
     expect(mockChannel.on).toHaveBeenCalledWith(
       'postgres_changes',
       expect.objectContaining({
@@ -147,6 +147,14 @@ describe('Supabase Realtime Subscriptions & Lifecycle (Phase 4)', () => {
       'postgres_changes',
       expect.objectContaining({
         table: 'stock_movements',
+        filter: `business_id=eq.${sampleBusinessId}`,
+      }),
+      expect.any(Function)
+    );
+    expect(mockChannel.on).toHaveBeenCalledWith(
+      'postgres_changes',
+      expect.objectContaining({
+        table: 'invoices',
         filter: `business_id=eq.${sampleBusinessId}`,
       }),
       expect.any(Function)
@@ -441,5 +449,177 @@ describe('Supabase Realtime Subscriptions & Lifecycle (Phase 4)', () => {
     });
     expect(screen.getByText(/Network offline/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Retry realtime connection/i })).toBeInTheDocument();
+  });
+
+  describe('Invoice Realtime Dispatch & Isolation (Phase 6)', () => {
+    it('dispatches invoice postgres_changes events to useRealtimeTable listeners for own business', () => {
+      setupAuthMock(sampleToken, sampleBusinessId);
+
+      const receivedEvents: RealtimePayload[] = [];
+      let reconcileCalled = false;
+
+      const InvoiceConsumer = () => {
+        useRealtimeTable({
+          table: 'invoices',
+          debounceMs: 0,
+          onEvent: (payload) => {
+            receivedEvents.push(payload);
+          },
+          onReconcile: () => {
+            reconcileCalled = true;
+          },
+        });
+        return <div>Listening Invoices</div>;
+      };
+
+      render(
+        <RealtimeProvider>
+          <InvoiceConsumer />
+        </RealtimeProvider>
+      );
+
+      const invoicesCb = postgresCallbacks.get('invoices');
+      expect(invoicesCb).toBeDefined();
+
+      const invoicePayload = {
+        eventType: 'INSERT',
+        commit_timestamp: '2026-10-24T12:00:00Z',
+        new: {
+          id: 'inv-101',
+          business_id: sampleBusinessId,
+          invoice_number: 'INV-202610-0001',
+          total_amount: 150.0,
+          status: 'issued',
+        },
+        old: {},
+      };
+
+      act(() => {
+        invoicesCb!(invoicePayload);
+      });
+
+      expect(receivedEvents).toHaveLength(1);
+      expect(receivedEvents[0].table).toBe('invoices');
+      expect(receivedEvents[0].new.id).toBe('inv-101');
+      expect(receivedEvents[0].new.invoice_number).toBe('INV-202610-0001');
+
+      // Verify reconnection triggers onReconcile
+      expect(reconcileCalled).toBe(false);
+      act(() => {
+        subscribeStatusCallback('SUBSCRIBED');
+      });
+      expect(reconcileCalled).toBe(true);
+    });
+
+    it('enforces tenant isolation and drops foreign business invoice events', () => {
+      setupAuthMock(sampleToken, sampleBusinessId);
+
+      const receivedEvents: RealtimePayload[] = [];
+
+      const InvoiceConsumer = () => {
+        useRealtimeTable({
+          table: 'invoices',
+          debounceMs: 0,
+          onEvent: (payload) => {
+            receivedEvents.push(payload);
+          },
+        });
+        return <div>Listening Invoices</div>;
+      };
+
+      render(
+        <RealtimeProvider>
+          <InvoiceConsumer />
+        </RealtimeProvider>
+      );
+
+      const invoicesCb = postgresCallbacks.get('invoices');
+      expect(invoicesCb).toBeDefined();
+
+      // Foreign invoice event
+      act(() => {
+        invoicesCb!({
+          eventType: 'INSERT',
+          commit_timestamp: '2026-10-24T12:01:00Z',
+          new: {
+            id: 'inv-foreign-999',
+            business_id: otherBusinessId,
+            invoice_number: 'INV-202610-9999',
+          },
+          old: {},
+        });
+      });
+
+      // Must be dropped
+      expect(receivedEvents).toHaveLength(0);
+
+      // Own business invoice event
+      act(() => {
+        invoicesCb!({
+          eventType: 'UPDATE',
+          commit_timestamp: '2026-10-24T12:02:00Z',
+          new: {
+            id: 'inv-own-202',
+            business_id: sampleBusinessId,
+            invoice_number: 'INV-202610-0002',
+            status: 'paid',
+          },
+          old: {
+            id: 'inv-own-202',
+            business_id: sampleBusinessId,
+            status: 'issued',
+          },
+        });
+      });
+
+      expect(receivedEvents).toHaveLength(1);
+      expect(receivedEvents[0].new.id).toBe('inv-own-202');
+    });
+
+    it('unregisters invoice listeners on component unmount and avoids leaks', () => {
+      setupAuthMock(sampleToken, sampleBusinessId);
+
+      const receivedEvents: RealtimePayload[] = [];
+
+      const InvoiceConsumer = () => {
+        useRealtimeTable({
+          table: 'invoices',
+          debounceMs: 0,
+          onEvent: (payload) => {
+            receivedEvents.push(payload);
+          },
+        });
+        return <div>Listening Invoices</div>;
+      };
+
+      const { unmount } = render(
+        <RealtimeProvider>
+          <InvoiceConsumer />
+        </RealtimeProvider>
+      );
+
+      const invoicesCb = postgresCallbacks.get('invoices');
+      expect(invoicesCb).toBeDefined();
+
+      // Unmount the consuming component
+      unmount();
+
+      // Dispatch event after unmount
+      act(() => {
+        invoicesCb!({
+          eventType: 'INSERT',
+          commit_timestamp: '2026-10-24T12:05:00Z',
+          new: {
+            id: 'inv-post-unmount',
+            business_id: sampleBusinessId,
+            invoice_number: 'INV-202610-0003',
+          },
+          old: {},
+        });
+      });
+
+      // No events should be delivered to unmounted listener
+      expect(receivedEvents).toHaveLength(0);
+    });
   });
 });

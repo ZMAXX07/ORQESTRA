@@ -114,11 +114,13 @@ describe('Phase 5 AI Intake & Invoices Frontend Tests', () => {
   // 1. AI Order Extraction & Human Review Tests
   // ---------------------------------------------------------------------------
   describe('AIOpsPage', () => {
-    it('renders input message form with boundaries and manual fallback button', () => {
+    it('renders input message form with boundaries and manual fallback button', async () => {
       const onNavigate = vi.fn();
       render(<AIOpsPage onNavigateToOrders={onNavigate} />);
 
-      expect(screen.getByText(/AI Order Extraction & Intake/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/AI Order Extraction & Intake/i)).toBeInTheDocument();
+      });
       expect(screen.getByTestId('ai-intake-textarea')).toBeInTheDocument();
 
       const analyzeBtn = screen.getByTestId('ai-analyze-button');

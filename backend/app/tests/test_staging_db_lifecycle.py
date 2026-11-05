@@ -141,10 +141,12 @@ def test_preserve_real_failures_when_database_expected(monkeypatch):
             pass
 
 
-def test_database_skip_clean_when_server_unavailable(monkeypatch):
+def test_database_skip_clean_when_server_unavailable(tmp_path, monkeypatch):
     """Verify that when no database is running and no env var is set, resolved URL is None (triggering skip)."""
     monkeypatch.delenv("STAGING_DATABASE_URL", raising=False)
     monkeypatch.delenv("ORQESTRA_STAGING_DATABASE_URL", raising=False)
+    non_existent_conn = tmp_path / "non_existent_staging_conn.txt"
+    monkeypatch.setattr(manage_staging_db, "CONN_FILE", non_existent_conn)
 
     # Ensure no valid running server is returned
     env_url = os.getenv("STAGING_DATABASE_URL") or os.getenv("ORQESTRA_STAGING_DATABASE_URL")

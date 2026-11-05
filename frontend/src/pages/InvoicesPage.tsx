@@ -59,6 +59,9 @@ export const InvoicesPage: React.FC = () => {
   // Realtime updates
   useRealtimeTable({
     table: 'invoices',
+    onEvent: () => {
+      loadInvoices();
+    },
     onReconcile: loadInvoices,
   });
 

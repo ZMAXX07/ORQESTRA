@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRealtimeTable } from '../hooks/useRealtimeTable';
 import {
@@ -45,6 +45,9 @@ export const OrdersPage: React.FC = () => {
   const userRole = serverAuth?.active_business?.role;
   const canApprove = userRole === 'owner' || userRole === 'admin';
 
+  const isMountedRef = useRef<boolean>(true);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [page, setPage] = useState<number>(1);
@@ -70,25 +73,56 @@ export const OrdersPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+        successTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const showTimedSuccess = useCallback((msg: string) => {
+    if (successTimerRef.current) {
+      clearTimeout(successTimerRef.current);
+      successTimerRef.current = null;
+    }
+    if (!isMountedRef.current) return;
+    setSuccessMsg(msg);
+    successTimerRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        setSuccessMsg(null);
+      }
+    }, 4000);
+  }, []);
+
   const loadOrders = useCallback(async () => {
     if (!token || !businessId) {
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
       return;
     }
-    setIsLoading(true);
-    setError(null);
+    if (isMountedRef.current) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const data = await fetchOrders(token, businessId, {
         status: statusFilter || undefined,
         page,
         page_size: 20,
       });
+      if (!isMountedRef.current) return;
       setOrders(data.items);
       setTotal(data.total);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load orders');
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [token, businessId, statusFilter, page]);
 
@@ -105,7 +139,9 @@ export const OrdersPage: React.FC = () => {
       const modifiedId = payload.new?.id || payload.old?.id;
       if (selectedOrder && modifiedId === selectedOrder.id && token && businessId) {
         fetchOrder(token, businessId, selectedOrder.id)
-          .then((fresh) => setSelectedOrder(fresh))
+          .then((fresh) => {
+            if (isMountedRef.current) setSelectedOrder(fresh);
+          })
           .catch(() => {});
       }
     },
@@ -125,6 +161,7 @@ export const OrdersPage: React.FC = () => {
         fetchProducts(token, businessId, { is_active: true, page_size: 100 }),
         fetchCustomers(token, businessId, { is_active: true, page_size: 100 }),
       ]);
+      if (!isMountedRef.current) return;
       setAvailableProducts(prods.items);
       setAvailableCustomers(custs.items);
 
@@ -135,6 +172,7 @@ export const OrdersPage: React.FC = () => {
       }
       setIsCreateOpen(true);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to initialize order form');
     }
   };
@@ -200,14 +238,17 @@ export const OrdersPage: React.FC = () => {
       };
 
       const created = await createOrder(token, businessId, payload);
+      if (!isMountedRef.current) return;
       setIsCreateOpen(false);
-      setSuccessMsg(`Draft Order ${created.order_number} created successfully.`);
-      setTimeout(() => setSuccessMsg(null), 4000);
+      showTimedSuccess(`Draft Order ${created.order_number} created successfully.`);
       await loadOrders();
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setFormError(err instanceof Error ? err.message : 'Failed to create order');
     } finally {
-      setIsSubmitting(false);
+      if (isMountedRef.current) {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -217,11 +258,15 @@ export const OrdersPage: React.FC = () => {
     setActionError(null);
     try {
       const ord = await fetchOrder(token, businessId, orderId);
+      if (!isMountedRef.current) return;
       setSelectedOrder(ord);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load order detail');
     } finally {
-      setDetailLoading(false);
+      if (isMountedRef.current) {
+        setDetailLoading(false);
+      }
     }
   };
 
@@ -231,14 +276,17 @@ export const OrdersPage: React.FC = () => {
     setActionError(null);
     try {
       const updated = await submitOrder(token, businessId, orderId);
+      if (!isMountedRef.current) return;
       setSelectedOrder(updated);
-      setSuccessMsg(`Order ${updated.order_number} submitted for operator approval.`);
-      setTimeout(() => setSuccessMsg(null), 4000);
+      showTimedSuccess(`Order ${updated.order_number} submitted for operator approval.`);
       await loadOrders();
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setActionError(err instanceof Error ? err.message : 'Failed to submit order');
     } finally {
-      setIsActionPending(false);
+      if (isMountedRef.current) {
+        setIsActionPending(false);
+      }
     }
   };
 
@@ -253,14 +301,17 @@ export const OrdersPage: React.FC = () => {
     setActionError(null);
     try {
       const updated = await approveOrder(token, businessId, orderId);
+      if (!isMountedRef.current) return;
       setSelectedOrder(updated);
-      setSuccessMsg(`Order ${updated.order_number} approved and stock deducted.`);
-      setTimeout(() => setSuccessMsg(null), 4000);
+      showTimedSuccess(`Order ${updated.order_number} approved and stock deducted.`);
       await loadOrders();
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setActionError(err instanceof Error ? err.message : 'Approval failed');
     } finally {
-      setIsActionPending(false);
+      if (isMountedRef.current) {
+        setIsActionPending(false);
+      }
     }
   };
 
@@ -273,14 +324,17 @@ export const OrdersPage: React.FC = () => {
     setActionError(null);
     try {
       const updated = await rejectOrder(token, businessId, orderId, reason);
+      if (!isMountedRef.current) return;
       setSelectedOrder(updated);
-      setSuccessMsg(`Order ${updated.order_number} marked as rejected.`);
-      setTimeout(() => setSuccessMsg(null), 4000);
+      showTimedSuccess(`Order ${updated.order_number} marked as rejected.`);
       await loadOrders();
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setActionError(err instanceof Error ? err.message : 'Rejection failed');
     } finally {
-      setIsActionPending(false);
+      if (isMountedRef.current) {
+        setIsActionPending(false);
+      }
     }
   };
 
@@ -298,14 +352,17 @@ export const OrdersPage: React.FC = () => {
     setActionError(null);
     try {
       const updated = await cancelOrder(token, businessId, orderId, reason);
+      if (!isMountedRef.current) return;
       setSelectedOrder(updated);
-      setSuccessMsg(`Order ${updated.order_number} cancelled.`);
-      setTimeout(() => setSuccessMsg(null), 4000);
+      showTimedSuccess(`Order ${updated.order_number} cancelled.`);
       await loadOrders();
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setActionError(err instanceof Error ? err.message : 'Cancellation failed');
     } finally {
-      setIsActionPending(false);
+      if (isMountedRef.current) {
+        setIsActionPending(false);
+      }
     }
   };
 
@@ -318,6 +375,7 @@ export const OrdersPage: React.FC = () => {
     try {
       const invoice = await allocateInvoiceForOrder(token, businessId, orderId);
       const blob = await downloadInvoicePdf(token, businessId, invoice.id);
+      if (!isMountedRef.current) return;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -327,12 +385,14 @@ export const OrdersPage: React.FC = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      setSuccessMsg(`Invoice ${invoice.invoice_number} allocated and downloaded successfully.`);
-      setTimeout(() => setSuccessMsg(null), 4000);
+      showTimedSuccess(`Invoice ${invoice.invoice_number} allocated and downloaded successfully.`);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setActionError(err instanceof Error ? err.message : 'Invoice generation failed');
     } finally {
-      setIsGeneratingInvoice(false);
+      if (isMountedRef.current) {
+        setIsGeneratingInvoice(false);
+      }
     }
   };
 

@@ -416,6 +416,11 @@ describe('Phase 6: Operational Dashboard & Workflow Hardening', () => {
       // Verify button shows pending state and is disabled immediately
       expect(screen.getByText(/Approving\.\.\./i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Approving\.\.\./i })).toBeDisabled();
+
+      // Await resolution of the in-flight mutation to keep test lifecycle synchronized
+      await waitFor(() => {
+        expect(screen.queryByText(/Approving\.\.\./i)).not.toBeInTheDocument();
+      });
     });
   });
 });

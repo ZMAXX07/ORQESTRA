@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import App from '../src/app/App';
 
 describe('App Root Component', () => {
@@ -8,7 +8,7 @@ describe('App Root Component', () => {
     window.history.pushState(null, '', '/');
   });
 
-  it('renders application header, branding, and Phase status', () => {
+  it('renders application header, branding, and Phase status', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation(() =>
@@ -16,19 +16,23 @@ describe('App Root Component', () => {
       )
     );
 
-    render(<App />);
+    await act(async () => {
+      render(<App />);
+    });
     expect(screen.getByText('Orqestra')).toBeInTheDocument();
     expect(screen.getByText('Operations Platform')).toBeInTheDocument();
     expect(screen.getByText('Operations Dashboard')).toBeInTheDocument();
   });
 
-  it('renders system navigation with all Phase 5 modules enabled', () => {
+  it('renders system navigation with all Phase 5 modules enabled', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation(() => new Promise(() => {}))
     );
 
-    render(<App />);
+    await act(async () => {
+      render(<App />);
+    });
     const productsButton = screen.getByRole('button', { name: /Products Catalog/i });
     expect(productsButton).not.toBeDisabled();
     expect(productsButton).toHaveAttribute('aria-disabled', 'false');
@@ -74,7 +78,9 @@ describe('App Root Component', () => {
       )
     );
 
-    render(<App />);
+    await act(async () => {
+      render(<App />);
+    });
     const statusButton = screen.getByRole('button', { name: /System Status/i });
     fireEvent.click(statusButton);
 
@@ -99,7 +105,9 @@ describe('App Root Component', () => {
       )
     );
 
-    render(<App />);
+    await act(async () => {
+      render(<App />);
+    });
     const productsButton = screen.getByRole('button', { name: /Products Catalog/i });
     fireEvent.click(productsButton);
 
@@ -126,7 +134,9 @@ describe('App Root Component', () => {
       )
     );
 
-    render(<App />);
+    await act(async () => {
+      render(<App />);
+    });
     const ordersButton = screen.getByRole('button', { name: /Order Processing/i });
     fireEvent.click(ordersButton);
 
@@ -137,13 +147,15 @@ describe('App Root Component', () => {
     ).toBeInTheDocument();
   });
 
-  it('opens and closes the operator authentication modal', () => {
+  it('opens and closes the operator authentication modal', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation(() => new Promise(() => {}))
     );
 
-    render(<App />);
+    await act(async () => {
+      render(<App />);
+    });
     const signInButtons = screen.getAllByRole('button', { name: /Sign In/i });
     expect(signInButtons.length).toBeGreaterThan(0);
 

@@ -44,6 +44,7 @@ from backend.app.services.ai_intake import AIIntakeService
 from backend.app.services.auth import AuthenticationError, TokenVerificationService
 from backend.app.services.authorization import AuthorizationError, AuthorizationService
 from backend.app.services.health import HealthService
+from backend.app.services.rate_limiter import InMemoryRateLimiter
 
 # Reusable HTTP Bearer scheme with automatic 401 handling
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -56,6 +57,7 @@ _inventory_repository_instance: Optional[BaseInventoryRepository] = None
 _customer_repository_instance: Optional[BaseCustomerRepository] = None
 _order_repository_instance: Optional[BaseOrderRepository] = None
 _invoice_repository_instance: Optional[BaseInvoiceRepository] = None
+_rate_limiter_instance: Optional[InMemoryRateLimiter] = None
 
 
 def get_business_repository(
@@ -378,3 +380,44 @@ def require_business_role(
             ) from exc
 
     return dependency
+
+
+def get_rate_limiter() -> InMemoryRateLimiter:
+    """Dependency provider for shared InMemoryRateLimiter instance."""
+    global _rate_limiter_instance
+    if _rate_limiter_instance is None:
+        _rate_limiter_instance = InMemoryRateLimiter()
+    return _rate_limiter_instance
+
+
+async def check_ai_rate_limit(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    membership: BusinessMembership = Depends(require_business_role("staff")),
+    limiter: InMemoryRateLimiter = Depends(get_rate_limiter),
+    settings: Settings = Depends(get_settings),
+) -> BusinessMembership:
+    """Enforces rate limiting on authenticated AI intake requests scoped to user and business."""
+    # Never trust client-supplied ID; use verified membership from JWT & database
+    bucket_key = f"{membership.business_id}:{current_user.user_id}"
+
+    is_allowed, retry_after = limiter.check_rate_limit(
+        key=bucket_key,
+        max_requests=settings.AI_RATE_LIMIT_REQUESTS,
+        window_seconds=settings.AI_RATE_LIMIT_WINDOW_SECONDS,
+    )
+
+    if not is_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "code": "RATE_LIMIT_EXCEEDED",
+                "message": (
+                    f"Rate limit exceeded: maximum {settings.AI_RATE_LIMIT_REQUESTS} "
+                    f"AI intake requests allowed per {settings.AI_RATE_LIMIT_WINDOW_SECONDS} seconds."
+                ),
+                "retry_after": retry_after,
+            },
+            headers={"Retry-After": str(retry_after)},
+        )
+    return membership
+

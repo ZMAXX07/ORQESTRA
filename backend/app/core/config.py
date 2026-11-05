@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     AI_MAX_MESSAGE_LENGTH: int = 4000
     AI_REQUEST_TIMEOUT_SECONDS: float = 15.0
 
+    # AI Intake Rate Limiting (Phase 6)
+    AI_RATE_LIMIT_REQUESTS: int = 15
+    AI_RATE_LIMIT_WINDOW_SECONDS: int = 60
+
     @property
     def effective_ai_api_key(self) -> Union[str, None]:
         """Return configured API key, supporting AI_API_KEY and GEMINI_API_KEY."""

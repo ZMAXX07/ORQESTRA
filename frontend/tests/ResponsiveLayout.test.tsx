@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import App from '../src/app/App';
 import { Header } from '../src/components/navigation/Header';
 import { NavigationShell } from '../src/components/navigation/NavigationShell';
@@ -12,20 +12,24 @@ describe('Responsive Layout & Cross-Device Optimization Suite', () => {
     vi.restoreAllMocks();
   });
 
-  const renderWithProviders = (ui: React.ReactElement) => {
-    return render(
-      <AuthProvider>
-        <RealtimeProvider>
-          {ui}
-        </RealtimeProvider>
-      </AuthProvider>
-    );
+  const renderWithProviders = async (ui: React.ReactElement) => {
+    let view: ReturnType<typeof render>;
+    await act(async () => {
+      view = render(
+        <AuthProvider>
+          <RealtimeProvider>
+            {ui}
+          </RealtimeProvider>
+        </AuthProvider>
+      );
+    });
+    return view!;
   };
 
   describe('Mobile Navigation Drawer & Toggle Behavior', () => {
-    it('renders the mobile menu toggle button with accessible aria attributes', () => {
+    it('renders the mobile menu toggle button with accessible aria attributes', async () => {
       const onToggle = vi.fn();
-      renderWithProviders(
+      await renderWithProviders(
         <Header
           isBackendHealthy={true}
           environmentName="Phase 5 Staging"
@@ -43,8 +47,8 @@ describe('Responsive Layout & Cross-Device Optimization Suite', () => {
       expect(onToggle).toHaveBeenCalledTimes(1);
     });
 
-    it('updates aria-label and aria-expanded when mobile menu is open', () => {
-      renderWithProviders(
+    it('updates aria-label and aria-expanded when mobile menu is open', async () => {
+      await renderWithProviders(
         <Header
           isBackendHealthy={true}
           environmentName="Phase 5 Staging"
@@ -130,8 +134,8 @@ describe('Responsive Layout & Cross-Device Optimization Suite', () => {
   });
 
   describe('MainLayout Responsive Orchestration', () => {
-    it('manages mobile drawer state and synchronizes Header and NavigationShell', () => {
-      renderWithProviders(
+    it('manages mobile drawer state and synchronizes Header and NavigationShell', async () => {
+      await renderWithProviders(
         <MainLayout isBackendHealthy={true} environmentName="Phase 5 Staging">
           <div data-testid="test-content">Dashboard Content</div>
         </MainLayout>
@@ -164,7 +168,7 @@ describe('Responsive Layout & Cross-Device Optimization Suite', () => {
     ];
 
     viewports.forEach(({ width, height, name }) => {
-      it(`renders App cleanly without layout collapse at ${name}`, () => {
+      it(`renders App cleanly without layout collapse at ${name}`, async () => {
         // Set window viewport dimension
         window.innerWidth = width;
         window.innerHeight = height;
@@ -189,7 +193,11 @@ describe('Responsive Layout & Cross-Device Optimization Suite', () => {
           )
         );
 
-        const { container } = render(<App />);
+        let container!: HTMLElement;
+        await act(async () => {
+          const res = render(<App />);
+          container = res.container;
+        });
 
         // Layout elements must exist and be accessible
         const layoutRoot = container.querySelector('.orq-layout-root');

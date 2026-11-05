@@ -65,15 +65,24 @@ export const AIOpsPage: React.FC<AIOpsPageProps> = ({ onNavigateToOrders }) => {
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     if (!token || !businessId) return;
 
     fetchProducts(token, businessId, { page_size: 100 })
-      .then((res) => setCatalogProducts(res.items.filter((p) => p.is_active)))
+      .then((res) => {
+        if (isMounted) setCatalogProducts(res.items.filter((p) => p.is_active));
+      })
       .catch(() => {});
 
     fetchCustomers(token, businessId, { page_size: 100 })
-      .then((res) => setCustomers(res.items.filter((c) => c.is_active)))
+      .then((res) => {
+        if (isMounted) setCustomers(res.items.filter((c) => c.is_active));
+      })
       .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, [token, businessId]);
 
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -453,7 +462,7 @@ export const AIOpsPage: React.FC<AIOpsPageProps> = ({ onNavigateToOrders }) => {
                             {matchedProd ? (
                               <span>{formatCurrency(matchedProd.unit_price, activeCurrency, { useGrouping: false })}</span>
                             ) : (
-                              <span style={{ color: 'var(--color-text-muted)' }}>—</span>
+                              <span style={{ color: 'var(--color-text-muted)' }}>N/A</span>
                             )}
                           </td>
                           <td style={{ fontWeight: 'var(--font-weight-semibold)' }}>

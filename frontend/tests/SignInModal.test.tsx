@@ -1,16 +1,20 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { SignInModal } from '../src/components/auth/SignInModal';
 import { AuthProvider } from '../src/context/AuthContext';
 
+const renderWithAuth = async (ui: React.ReactElement) => {
+  let rendered: ReturnType<typeof render>;
+  await act(async () => {
+    rendered = render(<AuthProvider>{ui}</AuthProvider>);
+  });
+  return rendered!;
+};
+
 describe('SignInModal Component', () => {
-  it('renders form inputs and handles empty validation', () => {
+  it('renders form inputs and handles empty validation', async () => {
     const handleClose = vi.fn();
-    render(
-      <AuthProvider>
-        <SignInModal isOpen={true} onClose={handleClose} />
-      </AuthProvider>
-    );
+    await renderWithAuth(<SignInModal isOpen={true} onClose={handleClose} />);
 
     expect(screen.getByText('Operator Authentication')).toBeInTheDocument();
     expect(screen.getByLabelText(/Business Email/i)).toBeInTheDocument();
@@ -25,12 +29,10 @@ describe('SignInModal Component', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders close button with accessible label and invokes onClose when clicked', () => {
+  it('renders close button with accessible label and invokes onClose when clicked', async () => {
     const handleClose = vi.fn();
-    render(
-      <AuthProvider>
-        <SignInModal isOpen={true} onClose={handleClose} initialMode="signin" />
-      </AuthProvider>
+    await renderWithAuth(
+      <SignInModal isOpen={true} onClose={handleClose} initialMode="signin" />
     );
 
     const closeBtn = screen.getByRole('button', { name: /Close dialog/i });
@@ -41,12 +43,10 @@ describe('SignInModal Component', () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
-  it('renders close button in Create Account mode and invokes onClose', () => {
+  it('renders close button in Create Account mode and invokes onClose', async () => {
     const handleClose = vi.fn();
-    render(
-      <AuthProvider>
-        <SignInModal isOpen={true} onClose={handleClose} initialMode="signup" />
-      </AuthProvider>
+    await renderWithAuth(
+      <SignInModal isOpen={true} onClose={handleClose} initialMode="signup" />
     );
 
     expect(screen.getByText('Create Your Account')).toBeInTheDocument();
@@ -57,24 +57,16 @@ describe('SignInModal Component', () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
-  it('closes modal on Escape key press', () => {
+  it('closes modal on Escape key press', async () => {
     const handleClose = vi.fn();
-    render(
-      <AuthProvider>
-        <SignInModal isOpen={true} onClose={handleClose} />
-      </AuthProvider>
-    );
+    await renderWithAuth(<SignInModal isOpen={true} onClose={handleClose} />);
 
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
-  it('does not render when isOpen is false', () => {
-    render(
-      <AuthProvider>
-        <SignInModal isOpen={false} onClose={vi.fn()} />
-      </AuthProvider>
-    );
+  it('does not render when isOpen is false', async () => {
+    await renderWithAuth(<SignInModal isOpen={false} onClose={vi.fn()} />);
 
     expect(screen.queryByText('Operator Authentication')).not.toBeInTheDocument();
   });

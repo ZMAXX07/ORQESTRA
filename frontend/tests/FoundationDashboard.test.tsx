@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { FoundationDashboard } from '../src/pages/FoundationDashboard';
 import { AuthProvider } from '../src/context/AuthContext';
 import * as operationsApi from '../src/services/operations';
@@ -30,8 +30,12 @@ const mockHealthData: HealthResponse = {
   },
 };
 
-const renderWithAuth = (ui: React.ReactElement) => {
-  return render(<AuthProvider>{ui}</AuthProvider>);
+const renderWithAuth = async (ui: React.ReactElement) => {
+  let rendered: ReturnType<typeof render>;
+  await act(async () => {
+    rendered = render(<AuthProvider>{ui}</AuthProvider>);
+  });
+  return rendered!;
 };
 
 describe('FoundationDashboard Component', () => {
@@ -44,8 +48,8 @@ describe('FoundationDashboard Component', () => {
     vi.mocked(operationsApi.fetchStockMovements).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20 });
   });
 
-  it('renders operational dashboard header, subtitle, and unauthenticated empty state', () => {
-    renderWithAuth(
+  it('renders operational dashboard header, subtitle, and unauthenticated empty state', async () => {
+    await renderWithAuth(
       <FoundationDashboard
         health={mockHealthData}
         isLoading={false}
@@ -62,9 +66,9 @@ describe('FoundationDashboard Component', () => {
     expect(screen.getByText('Sign In Required')).toBeInTheDocument();
   });
 
-  it('displays error state when backend connection fails', () => {
+  it('displays error state when backend connection fails', async () => {
     const handleRefresh = vi.fn();
-    renderWithAuth(
+    await renderWithAuth(
       <FoundationDashboard
         health={null}
         isLoading={false}
@@ -81,9 +85,9 @@ describe('FoundationDashboard Component', () => {
     expect(handleRefresh).toHaveBeenCalledTimes(1);
   });
 
-  it('triggers onRefresh when clicking Refresh Data button', () => {
+  it('triggers onRefresh when clicking Refresh Data button', async () => {
     const handleRefresh = vi.fn();
-    renderWithAuth(
+    await renderWithAuth(
       <FoundationDashboard
         health={mockHealthData}
         isLoading={false}

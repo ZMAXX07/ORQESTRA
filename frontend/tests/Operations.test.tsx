@@ -445,7 +445,9 @@ describe('Phase 3 Operations Frontend Components', () => {
 
       render(<AIOpsPage />);
 
-      expect(screen.getByText('AI Order Extraction & Intake')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('AI Order Extraction & Intake')).toBeInTheDocument();
+      });
       expect(screen.getByText('Customer Order Message')).toBeInTheDocument();
 
       const textarea = screen.getByTestId('ai-intake-textarea');

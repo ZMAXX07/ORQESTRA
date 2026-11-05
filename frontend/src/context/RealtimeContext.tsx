@@ -44,6 +44,7 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ['inventory', new Set()],
       ['orders', new Set()],
       ['stock_movements', new Set()],
+      ['invoices', new Set()],
     ])
   );
 
@@ -184,6 +185,7 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       'inventory',
       'orders',
       'stock_movements',
+      'invoices',
     ];
 
     operationalTables.forEach((table) => {
@@ -239,10 +241,12 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       table: RealtimeTable,
       listener: RealtimeListener<T>
     ) => {
-      const listeners = tableListenersRef.current.get(table);
-      if (listeners) {
-        listeners.add(listener as RealtimeListener);
+      let listeners = tableListenersRef.current.get(table);
+      if (!listeners) {
+        listeners = new Set();
+        tableListenersRef.current.set(table, listeners);
       }
+      listeners.add(listener as RealtimeListener);
       return () => {
         const currentListeners = tableListenersRef.current.get(table);
         if (currentListeners) {

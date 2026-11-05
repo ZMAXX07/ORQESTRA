@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import {
   ISO_CURRENCIES,
   isValidCurrencyCode,
@@ -293,16 +293,20 @@ describe('World Currencies & Business Onboarding Suite', () => {
       fireEvent.click(inrChip);
 
       // Submit form
-      fireEvent.click(screen.getByRole('button', { name: /Create Business/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /Create Business/i }));
+      });
 
-      expect(createSpy).toHaveBeenCalledWith(
-        {
-          name: 'Bharat Logistics',
-          slug: 'bharat-logistics',
-          currency: 'INR',
-        },
-        'usr_operator_inr'
-      );
+      await waitFor(() => {
+        expect(createSpy).toHaveBeenCalledWith(
+          {
+            name: 'Bharat Logistics',
+            slug: 'bharat-logistics',
+            currency: 'INR',
+          },
+          'usr_operator_inr'
+        );
+      });
     });
 
     it('preserves user selected currency when form re-renders from other field changes', () => {
