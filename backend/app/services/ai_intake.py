@@ -398,6 +398,7 @@ class AIIntakeService:
                     candidate_product_name=item.candidate_product_name,
                     raw_text=item.raw_text,
                     quantity=qty,
+                    requested_quantity=qty,
                     variant=item.variant,
                     match_status=match_status,
                     matched_product=matched_prod,

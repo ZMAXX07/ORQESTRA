@@ -351,7 +351,7 @@ export const InvoicesPage: React.FC = () => {
                             <td><strong>{item.product_name}</strong></td>
                             <td>{item.quantity}</td>
                             <td>{formatCurrency(item.unit_price, activeCurrency, { useGrouping: false })}</td>
-                            <td>{formatCurrency(item.total_price, activeCurrency, { useGrouping: false })}</td>
+                            <td>{formatCurrency(item.total_price || item.line_total, activeCurrency, { useGrouping: false })}</td>
                           </tr>
                         ))}
                       </tbody>

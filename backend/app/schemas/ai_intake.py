@@ -65,6 +65,7 @@ class CandidateItemMatch(BaseModel):
     candidate_product_name: str
     raw_text: Optional[str] = None
     quantity: int = Field(..., ge=1)
+    requested_quantity: Optional[int] = None
     variant: Optional[str] = None
     match_status: Literal["matched", "ambiguous", "unmatched"]
     matched_product: Optional[CandidateProductMatch] = None

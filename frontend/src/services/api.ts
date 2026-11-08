@@ -97,15 +97,22 @@ export async function fetchHealthStatus(): Promise<HealthResponse> {
 /**
  * Verify Supabase JWT token against backend /api/v1/auth/me and retrieve business memberships.
  */
-export async function fetchAuthMe(token: string): Promise<import('../types/api').AuthContextResponse> {
+export async function fetchAuthMe(
+  token: string,
+  businessId?: string
+): Promise<import('../types/api').AuthContextResponse> {
   const url = `${getApiBaseUrl()}/api/v1/auth/me`;
   try {
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    };
+    if (businessId) {
+      headers['X-Business-ID'] = businessId;
+    }
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers,
     });
 
     if (!response.ok) {

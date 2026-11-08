@@ -133,7 +133,7 @@ export const AIOpsPage: React.FC<AIOpsPageProps> = ({ onNavigateToOrders }) => {
           candidate_name: cand.candidate_product_name,
           raw_text: cand.raw_text,
           variant: cand.variant,
-          quantity: cand.requested_quantity > 0 ? cand.requested_quantity : 1,
+          quantity: (cand.quantity && cand.quantity > 0) ? cand.quantity : (cand.requested_quantity && cand.requested_quantity > 0) ? cand.requested_quantity : 1,
           selected_product_id: selectedId,
           match_status: cand.match_status,
           potential_matches: cand.potential_matches || [],

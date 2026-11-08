@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   isMobileMenuOpen = false,
   onToggleMobileMenu,
 }) => {
-  const { user, signOut, isConfigured } = useAuth();
+  const { user, signOut, isConfigured, serverAuth, switchBusiness } = useAuth();
 
   return (
     <header className="orq-header" role="banner">
@@ -82,6 +82,25 @@ export const Header: React.FC<HeaderProps> = ({
 
             <RealtimeStatusBadge />
           </div>
+
+          {user && serverAuth?.memberships && serverAuth.memberships.length > 0 && (
+            <div className="orq-header-workspace-select-wrapper">
+              <select
+                className="orq-header-workspace-select"
+                value={serverAuth.active_business?.business_id || ''}
+                onChange={(e) => switchBusiness?.(e.target.value)}
+                aria-label="Select Business Workspace"
+                title="Active Business Workspace"
+                data-testid="workspace-select"
+              >
+                {serverAuth.memberships.map((m) => (
+                  <option key={m.business_id} value={m.business_id}>
+                    {m.business_name} ({m.currency})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {user ? (
             <div className="orq-header-user">

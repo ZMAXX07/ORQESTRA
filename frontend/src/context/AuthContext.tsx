@@ -30,6 +30,7 @@ export interface AuthContextValue {
   resetPassword?: (email: string) => Promise<ResetPasswordResult>;
   updatePassword?: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   refreshServerAuth: () => Promise<void>;
+  switchBusiness?: (businessId: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -42,10 +43,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authError, setAuthError] = useState<string | null>(null);
   const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(false);
 
-  const verifyWithBackend = useCallback(async (token: string) => {
+  const verifyWithBackend = useCallback(async (token: string, overrideBusinessId?: string) => {
     try {
-      const data = await fetchAuthMe(token);
+      const storedBizId =
+        overrideBusinessId ||
+        (typeof window !== 'undefined'
+          ? localStorage.getItem('orqestra_active_business_id') || undefined
+          : undefined);
+      const data = await fetchAuthMe(token, storedBizId);
       setServerAuth(data);
+      if (data.active_business && typeof window !== 'undefined') {
+        localStorage.setItem('orqestra_active_business_id', data.active_business.business_id);
+      }
       setAuthError(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Server authentication verification failed';
@@ -53,6 +62,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setServerAuth(null);
     }
   }, []);
+
+  const switchBusiness = useCallback(
+    async (businessId: string) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('orqestra_active_business_id', businessId);
+      }
+      if (session?.access_token) {
+        await verifyWithBackend(session.access_token, businessId);
+      }
+    },
+    [session, verifyWithBackend]
+  );
 
   useEffect(() => {
     // Check if URL indicates password recovery mode
@@ -230,6 +251,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('orqestra_active_business_id');
+    }
     if (!isSupabaseConfigured || !supabase) return;
     try {
       await supabase.auth.signOut();
@@ -324,6 +348,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetPassword,
         updatePassword,
         refreshServerAuth,
+        switchBusiness,
       }}
     >
       {children}

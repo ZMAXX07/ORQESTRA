@@ -33,10 +33,16 @@
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
 
 .orq-header-menu-toggle {
   display: none;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 11;
 }
 
 .orq-brand {
@@ -116,6 +122,35 @@
 .orq-header-status-btn:focus-visible {
   outline: 2px solid var(--color-brand-primary);
   outline-offset: 2px;
+}
+
+.orq-header-workspace-select-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.orq-header-workspace-select {
+  height: 32px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-fast);
+}
+
+.orq-header-workspace-select:hover {
+  border-color: var(--color-border-strong);
+  background: #ffffff;
+}
+
+.orq-header-workspace-select:focus {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
 }
 
 /* User Profile Capsule (Reference Ethan Hall Card Aesthetic) */
@@ -311,6 +346,13 @@
   .orq-header-container {
     padding: 0 var(--space-4);
     height: 58px;
+    gap: var(--space-2);
+  }
+
+  .orq-header-left {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
   }
 
   .orq-header-menu-toggle {
@@ -327,6 +369,9 @@
     cursor: pointer;
     box-shadow: var(--shadow-xs);
     transition: all var(--transition-fast);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 11;
   }
 
   .orq-header-menu-toggle:hover {
@@ -341,6 +386,16 @@
 
   .orq-header-meta {
     gap: var(--space-2);
+    flex-shrink: 1;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  .orq-header-workspace-select {
+    max-width: 120px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
   /* Mobile Drawer Overlay & Navigation */
@@ -466,8 +521,26 @@
 }
 
 @media (max-width: 440px) {
+  .orq-header-container {
+    padding: 0 var(--space-2);
+    gap: var(--space-1-5);
+  }
+
+  .orq-header-left {
+    gap: var(--space-1-5);
+  }
+
   .orq-brand-tagline {
     display: none;
+  }
+
+  .orq-brand-name {
+    display: none;
+  }
+
+  .orq-brand-logo {
+    width: 28px;
+    height: 28px;
   }
 
   .orq-header-email {
@@ -476,5 +549,22 @@
 
   .orq-header-user {
     padding: 3px 6px;
+  }
+
+  .orq-header-meta {
+    gap: var(--space-1-5);
+  }
+
+  .orq-header-workspace-select {
+    max-width: 95px;
+    font-size: 11px;
+    padding: 0 4px;
+    height: 30px;
+  }
+
+  .orq-header-auth-btn {
+    padding: 4px 8px;
+    min-height: 28px;
+    font-size: 11px;
   }
 }

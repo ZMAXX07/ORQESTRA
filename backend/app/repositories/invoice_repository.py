@@ -120,6 +120,7 @@ class InMemoryInvoiceRepository(BaseInvoiceRepository):
                     "quantity": it.quantity,
                     "unit_price": str(it.unit_price),
                     "line_total": str(it.total_price),
+                    "total_price": str(it.total_price),
                 }
                 for it in order.items
             ]

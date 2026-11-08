@@ -1,6 +1,7 @@
 """Authentication and authorization verification endpoints for API v1."""
 
-from fastapi import APIRouter, Depends, status
+from typing import Optional
+from fastapi import APIRouter, Depends, Header, status
 from backend.app.api.deps import (
     get_authorization_service,
     get_current_user,
@@ -29,10 +30,18 @@ router = APIRouter()
 async def get_auth_me(
     current_user: AuthenticatedUser = Depends(get_current_user),
     auth_service: AuthorizationService = Depends(get_authorization_service),
+    x_business_id: Optional[str] = Header(None, alias="X-Business-ID"),
 ) -> AuthContextResponse:
     """Return verified identity and business memberships."""
     memberships = await auth_service.get_user_memberships(current_user)
-    active_business = memberships[0] if memberships else None
+    active_business = None
+    if x_business_id:
+        for m in memberships:
+            if m.business_id == x_business_id:
+                active_business = m
+                break
+    if not active_business:
+        active_business = memberships[0] if memberships else None
 
     return AuthContextResponse(
         status="authenticated",

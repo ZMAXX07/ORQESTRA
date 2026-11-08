@@ -211,6 +211,7 @@ export interface InvoiceLineItemSnapshot {
   quantity?: number;
   unit_price?: string;
   total_price?: string;
+  line_total?: string;
 }
 
 export interface Invoice {
@@ -250,7 +251,8 @@ export interface CandidateItemMatch {
   candidate_product_name: string;
   raw_text: string;
   variant?: string;
-  requested_quantity: number;
+  quantity?: number;
+  requested_quantity?: number;
   match_status: CandidateMatchStatus;
   matched_product?: CandidateProductMatch;
   potential_matches: CandidateProductMatch[];

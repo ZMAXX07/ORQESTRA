@@ -620,8 +620,9 @@ export const ProductsPage: React.FC = () => {
                 </div>
               )}
               <div className="orq-form-group">
-                <label className="orq-form-label">Product Name</label>
+                <label htmlFor="product-name-edit-input" className="orq-form-label">Product Name</label>
                 <input
+                  id="product-name-edit-input"
                   type="text"
                   required
                   className="orq-form-input"
@@ -631,8 +632,9 @@ export const ProductsPage: React.FC = () => {
               </div>
 
               <div className="orq-form-group">
-                <label className="orq-form-label">Description</label>
+                <label htmlFor="product-desc-edit-input" className="orq-form-label">Description</label>
                 <textarea
+                  id="product-desc-edit-input"
                   className="orq-form-textarea"
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
@@ -641,8 +643,9 @@ export const ProductsPage: React.FC = () => {
 
               <div className="orq-form-row">
                 <div className="orq-form-group">
-                  <label className="orq-form-label">Unit Price ({currencySymbol})</label>
+                  <label htmlFor="product-unit-price-edit-input" className="orq-form-label">Unit Price ({currencySymbol})</label>
                   <input
+                    id="product-unit-price-edit-input"
                     type="number"
                     step="0.01"
                     min="0"
@@ -653,8 +656,9 @@ export const ProductsPage: React.FC = () => {
                   />
                 </div>
                 <div className="orq-form-group">
-                  <label className="orq-form-label">Cost Price ({currencySymbol})</label>
+                  <label htmlFor="product-cost-price-edit-input" className="orq-form-label">Cost Price ({currencySymbol})</label>
                   <input
+                    id="product-cost-price-edit-input"
                     type="number"
                     step="0.01"
                     min="0"
