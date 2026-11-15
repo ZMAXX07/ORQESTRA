@@ -7,6 +7,14 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+IN_MEMORY_ALLOWED_ENVIRONMENTS = {"development", "test", "testing", "local"}
+
+
+def is_in_memory_allowed(environment: str) -> bool:
+    """Return True if the specified environment permits in-memory repositories."""
+    return (environment or "").lower().strip() in IN_MEMORY_ALLOWED_ENVIRONMENTS
+
+
 class Settings(BaseSettings):
     """Centralized environment-based settings for Orqestra backend."""
 
@@ -16,6 +24,11 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     HOST: str = "127.0.0.1"
     PORT: int = 8000
+
+    @property
+    def is_in_memory_allowed(self) -> bool:
+        """Return True if the current environment permits in-memory repositories."""
+        return is_in_memory_allowed(self.ENVIRONMENT)
 
     # Explicit CORS allowed origins
     CORS_ORIGINS: Union[List[str], str] = [

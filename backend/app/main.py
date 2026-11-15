@@ -21,6 +21,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info(
         f"Starting {settings.APP_NAME} v{settings.APP_VERSION} [{settings.ENVIRONMENT}]"
     )
+    # Fail startup immediately if repositories cannot initialize in staging or production
+    from backend.app.api.deps import validate_repository_configuration
+    validate_repository_configuration(settings)
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 
@@ -28,6 +31,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 def create_application(settings: Settings | None = None) -> FastAPI:
     """Application factory for Orqestra backend."""
     current_settings = settings or get_settings()
+
+    @asynccontextmanager
+    async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+        """Application lifespan events bound to configured settings."""
+        logger = setup_logging(current_settings.LOG_LEVEL)
+        logger.info(
+            f"Starting {current_settings.APP_NAME} v{current_settings.APP_VERSION} [{current_settings.ENVIRONMENT}]"
+        )
+        # Fail startup immediately if repositories cannot initialize in staging or production
+        from backend.app.api.deps import validate_repository_configuration
+        validate_repository_configuration(current_settings)
+        yield
+        logger.info(f"Shutting down {current_settings.APP_NAME}")
 
     app = FastAPI(
         title=current_settings.APP_NAME,
@@ -40,7 +56,7 @@ def create_application(settings: Settings | None = None) -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
-        lifespan=lifespan,
+        lifespan=app_lifespan,
     )
 
     # Register explicit CORS middleware

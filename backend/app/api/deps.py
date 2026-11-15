@@ -3,7 +3,12 @@
 from typing import Callable, Optional
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from backend.app.core.config import Settings, get_settings
+from backend.app.core.config import (
+    IN_MEMORY_ALLOWED_ENVIRONMENTS,
+    Settings,
+    get_settings,
+    is_in_memory_allowed,
+)
 from backend.app.repositories.audit_repository import (
     BaseAuditLogRepository,
     InMemoryAuditLogRepository,
@@ -60,32 +65,75 @@ _invoice_repository_instance: Optional[BaseInvoiceRepository] = None
 _rate_limiter_instance: Optional[InMemoryRateLimiter] = None
 
 
+def _assert_repository_safety(
+    repo_instance: Optional[object],
+    repo_name: str,
+    settings: Settings,
+    in_memory_class: type,
+) -> None:
+    """Enforce that staging and production strictly forbid in-memory repositories and require Supabase credentials."""
+    if not is_in_memory_allowed(settings.ENVIRONMENT):
+        env_label = "a production" if settings.ENVIRONMENT == "production" else f"a {settings.ENVIRONMENT}"
+        if repo_instance is not None and isinstance(repo_instance, in_memory_class):
+            raise RuntimeError(
+                f"CRITICAL SECURITY CONFIGURATION ERROR: {in_memory_class.__name__} "
+                f"cannot be selected or used in {env_label} environment."
+            )
+        if repo_instance is None and (not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY):
+            env_title = "Production" if settings.ENVIRONMENT == "production" else settings.ENVIRONMENT.capitalize()
+            raise RuntimeError(
+                f"CRITICAL SECURITY CONFIGURATION ERROR: Production requires database credentials for {repo_name.lower()}. "
+                f"{env_title} environment requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to initialize "
+                f"database-backed Supabase{repo_name}."
+            )
+
+
+def reset_repository_instances() -> None:
+    """Reset all cached repository instances (primarily for test isolation)."""
+    global _business_repository_instance, _audit_repository_instance
+    global _product_repository_instance, _inventory_repository_instance
+    global _customer_repository_instance, _order_repository_instance
+    global _invoice_repository_instance
+    _business_repository_instance = None
+    _audit_repository_instance = None
+    _product_repository_instance = None
+    _inventory_repository_instance = None
+    _customer_repository_instance = None
+    _order_repository_instance = None
+    _invoice_repository_instance = None
+
+
+def validate_repository_configuration(settings: Optional[Settings] = None) -> None:
+    """Validate repository requirements during application startup.
+    
+    Ensures staging and production fail fast on startup if database-backed
+    repositories cannot be initialized. In-memory repositories are strictly
+    forbidden outside of development and test environments.
+    """
+    if settings is None:
+        settings = get_settings()
+
+    if not is_in_memory_allowed(settings.ENVIRONMENT):
+        get_business_repository(settings=settings)
+        a_repo = get_audit_repository(settings=settings)
+        p_repo = get_product_repository(settings=settings)
+        get_inventory_repository(settings=settings, product_repo=p_repo, audit_repo=a_repo)
+        get_customer_repository(settings=settings)
+        get_order_repository(settings=settings, product_repo=p_repo, audit_repo=a_repo)
+        get_invoice_repository(settings=settings)
+
+
 def get_business_repository(
     settings: Settings = Depends(get_settings),
 ) -> BaseBusinessRepository:
     """Dependency provider for business repository."""
     global _business_repository_instance
-    if settings.ENVIRONMENT == "production":
-        if _business_repository_instance is not None and isinstance(
-            _business_repository_instance, InMemoryBusinessRepository
-        ):
-            raise RuntimeError(
-                "CRITICAL SECURITY CONFIGURATION ERROR: InMemoryBusinessRepository "
-                "cannot be selected or used in a production environment."
-            )
-        if _business_repository_instance is None:
-            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
-                raise RuntimeError(
-                    "CRITICAL SECURITY CONFIGURATION ERROR: Production environment requires "
-                    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to initialize database-backed "
-                    "SupabaseBusinessRepository."
-                )
-            _business_repository_instance = SupabaseBusinessRepository(
-                supabase_url=settings.SUPABASE_URL,
-                service_role_key=settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-        return _business_repository_instance
-
+    _assert_repository_safety(
+        _business_repository_instance,
+        "BusinessRepository",
+        settings,
+        InMemoryBusinessRepository,
+    )
     if _business_repository_instance is None:
         if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
             _business_repository_instance = SupabaseBusinessRepository(
@@ -102,23 +150,12 @@ def get_audit_repository(
 ) -> BaseAuditLogRepository:
     """Dependency provider for audit log repository."""
     global _audit_repository_instance
-    if settings.ENVIRONMENT == "production":
-        if _audit_repository_instance is not None and isinstance(
-            _audit_repository_instance, InMemoryAuditLogRepository
-        ):
-            raise RuntimeError(
-                "CRITICAL SECURITY CONFIGURATION ERROR: InMemoryAuditLogRepository "
-                "cannot be selected or used in a production environment."
-            )
-        if _audit_repository_instance is None:
-            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
-                raise RuntimeError("Production requires database credentials for audit logs")
-            _audit_repository_instance = SupabaseAuditLogRepository(
-                supabase_url=settings.SUPABASE_URL,
-                service_role_key=settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-        return _audit_repository_instance
-
+    _assert_repository_safety(
+        _audit_repository_instance,
+        "AuditLogRepository",
+        settings,
+        InMemoryAuditLogRepository,
+    )
     if _audit_repository_instance is None:
         if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
             _audit_repository_instance = SupabaseAuditLogRepository(
@@ -135,23 +172,12 @@ def get_product_repository(
 ) -> BaseProductRepository:
     """Dependency provider for product repository."""
     global _product_repository_instance
-    if settings.ENVIRONMENT == "production":
-        if _product_repository_instance is not None and isinstance(
-            _product_repository_instance, InMemoryProductRepository
-        ):
-            raise RuntimeError(
-                "CRITICAL SECURITY CONFIGURATION ERROR: InMemoryProductRepository "
-                "cannot be selected or used in a production environment."
-            )
-        if _product_repository_instance is None:
-            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
-                raise RuntimeError("Production requires database credentials for products")
-            _product_repository_instance = SupabaseProductRepository(
-                supabase_url=settings.SUPABASE_URL,
-                service_role_key=settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-        return _product_repository_instance
-
+    _assert_repository_safety(
+        _product_repository_instance,
+        "ProductRepository",
+        settings,
+        InMemoryProductRepository,
+    )
     if _product_repository_instance is None:
         if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
             _product_repository_instance = SupabaseProductRepository(
@@ -170,23 +196,12 @@ def get_inventory_repository(
 ) -> BaseInventoryRepository:
     """Dependency provider for inventory repository."""
     global _inventory_repository_instance
-    if settings.ENVIRONMENT == "production":
-        if _inventory_repository_instance is not None and isinstance(
-            _inventory_repository_instance, InMemoryInventoryRepository
-        ):
-            raise RuntimeError(
-                "CRITICAL SECURITY CONFIGURATION ERROR: InMemoryInventoryRepository "
-                "cannot be selected or used in a production environment."
-            )
-        if _inventory_repository_instance is None:
-            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
-                raise RuntimeError("Production requires database credentials for inventory")
-            _inventory_repository_instance = SupabaseInventoryRepository(
-                supabase_url=settings.SUPABASE_URL,
-                service_role_key=settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-        return _inventory_repository_instance
-
+    _assert_repository_safety(
+        _inventory_repository_instance,
+        "InventoryRepository",
+        settings,
+        InMemoryInventoryRepository,
+    )
     if _inventory_repository_instance is None:
         if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
             _inventory_repository_instance = SupabaseInventoryRepository(
@@ -206,23 +221,12 @@ def get_customer_repository(
 ) -> BaseCustomerRepository:
     """Dependency provider for customer repository."""
     global _customer_repository_instance
-    if settings.ENVIRONMENT == "production":
-        if _customer_repository_instance is not None and isinstance(
-            _customer_repository_instance, InMemoryCustomerRepository
-        ):
-            raise RuntimeError(
-                "CRITICAL SECURITY CONFIGURATION ERROR: InMemoryCustomerRepository "
-                "cannot be selected or used in a production environment."
-            )
-        if _customer_repository_instance is None:
-            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
-                raise RuntimeError("Production requires database credentials for customers")
-            _customer_repository_instance = SupabaseCustomerRepository(
-                supabase_url=settings.SUPABASE_URL,
-                service_role_key=settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-        return _customer_repository_instance
-
+    _assert_repository_safety(
+        _customer_repository_instance,
+        "CustomerRepository",
+        settings,
+        InMemoryCustomerRepository,
+    )
     if _customer_repository_instance is None:
         if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
             _customer_repository_instance = SupabaseCustomerRepository(
@@ -241,23 +245,12 @@ def get_order_repository(
 ) -> BaseOrderRepository:
     """Dependency provider for order repository."""
     global _order_repository_instance
-    if settings.ENVIRONMENT == "production":
-        if _order_repository_instance is not None and isinstance(
-            _order_repository_instance, InMemoryOrderRepository
-        ):
-            raise RuntimeError(
-                "CRITICAL SECURITY CONFIGURATION ERROR: InMemoryOrderRepository "
-                "cannot be selected or used in a production environment."
-            )
-        if _order_repository_instance is None:
-            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
-                raise RuntimeError("Production requires database credentials for orders")
-            _order_repository_instance = SupabaseOrderRepository(
-                supabase_url=settings.SUPABASE_URL,
-                service_role_key=settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-        return _order_repository_instance
-
+    _assert_repository_safety(
+        _order_repository_instance,
+        "OrderRepository",
+        settings,
+        InMemoryOrderRepository,
+    )
     if _order_repository_instance is None:
         if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
             _order_repository_instance = SupabaseOrderRepository(
@@ -277,23 +270,12 @@ def get_invoice_repository(
 ) -> BaseInvoiceRepository:
     """Dependency provider for invoice repository."""
     global _invoice_repository_instance
-    if settings.ENVIRONMENT == "production":
-        if _invoice_repository_instance is not None and isinstance(
-            _invoice_repository_instance, InMemoryInvoiceRepository
-        ):
-            raise RuntimeError(
-                "CRITICAL SECURITY CONFIGURATION ERROR: InMemoryInvoiceRepository "
-                "cannot be selected or used in a production environment."
-            )
-        if _invoice_repository_instance is None:
-            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
-                raise RuntimeError("Production requires database credentials for invoices")
-            _invoice_repository_instance = SupabaseInvoiceRepository(
-                supabase_url=settings.SUPABASE_URL,
-                service_role_key=settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-        return _invoice_repository_instance
-
+    _assert_repository_safety(
+        _invoice_repository_instance,
+        "InvoiceRepository",
+        settings,
+        InMemoryInvoiceRepository,
+    )
     if _invoice_repository_instance is None:
         if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
             _invoice_repository_instance = SupabaseInvoiceRepository(
