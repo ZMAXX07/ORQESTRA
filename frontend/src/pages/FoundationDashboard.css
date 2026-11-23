@@ -194,7 +194,8 @@
 .orq-ops-card-meta-text {
   flex: 1;
   min-width: 0;
-  line-height: 1.35;
+  line-height: 1.4;
+  padding: 2px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
