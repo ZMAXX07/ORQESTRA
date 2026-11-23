@@ -1,8 +1,11 @@
 # Environments and secrets
 .env
-.env.local
-.env.*.local
+.env.*
 *.env
+*.env.*
+**/.env
+**/.env.*
+!**/.env.example
 backend/.env*
 !backend/.env.example
 frontend/.env*
@@ -14,6 +17,10 @@ session_payload.json
 *.pem
 *.key
 *.cert
+conn_string*.txt
+*conn*.txt
+*.secret
+*.internal
 
 # Python / Backend
 __pycache__/
