@@ -7,7 +7,7 @@ describe('Supabase Client Configuration (Phase 7.3)', () => {
   });
 
   it('configures client when VITE_SUPABASE_PUBLISHABLE_KEY is provided', async () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'https://vwlwbwwrumsmjqeavvxk.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://vclkeubwpiyhuvprvngx.supabase.co');
     vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_test_token_123');
 
     const { isSupabaseConfigured, supabase } = await import('../src/services/supabase');
@@ -17,7 +17,7 @@ describe('Supabase Client Configuration (Phase 7.3)', () => {
   });
 
   it('configures client with fallback to VITE_SUPABASE_ANON_KEY when publishable key is not set', async () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'https://vwlwbwwrumsmjqeavvxk.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://vclkeubwpiyhuvprvngx.supabase.co');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'sb_anon_fallback_key_456');
 
     const { isSupabaseConfigured, supabase } = await import('../src/services/supabase');

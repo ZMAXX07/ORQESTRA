@@ -5,6 +5,7 @@ import { MainLayout } from '../layouts/MainLayout';
 import { FoundationDashboard } from '../pages/FoundationDashboard';
 import { SignInModal } from '../components/auth/SignInModal';
 import { CreateBusinessModal } from '../components/onboarding/CreateBusinessModal';
+import { LegalModal } from '../components/legal/LegalModal';
 import { LoadingSpinner } from '../components/feedback/LoadingSpinner';
 import { fetchHealthStatus } from '../services/api';
 import { HealthResponse } from '../types/api';
@@ -67,6 +68,7 @@ function AppContent() {
   const [error, setError] = useState<string | null>(null);
   const [isSignInOpen, setIsSignInOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+  const [legalModalDoc, setLegalModalDoc] = useState<'terms' | 'privacy' | null>(null);
   const [activeNavId, setActiveNavId] = useState<string>(getInitialNavId);
 
   const handleNavSelect = useCallback((navId: string) => {
@@ -196,6 +198,7 @@ function AppContent() {
         onNavSelect={handleNavSelect}
         onOpenSignIn={() => setIsSignInOpen(true)}
         onOpenStatus={() => handleNavSelect('system-status')}
+        onOpenLegal={(doc) => setLegalModalDoc(doc)}
       >
         {renderActivePage()}
       </MainLayout>
@@ -210,6 +213,11 @@ function AppContent() {
       <CreateBusinessModal
         isOpen={showOnboarding}
         onSuccess={() => setIsOnboardingOpen(false)}
+      />
+      <LegalModal
+        isOpen={legalModalDoc !== null}
+        onClose={() => setLegalModalDoc(null)}
+        initialDoc={legalModalDoc || 'terms'}
       />
     </>
   );
