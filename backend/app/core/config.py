@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     SUPABASE_JWKS_URL: Union[str, None] = None
     SUPABASE_JWT_AUDIENCE: str = "authenticated"
     SUPABASE_JWT_ISSUER: Union[str, None] = None
-    SUPABASE_JWT_ALGORITHM: str = "HS256"
+    SUPABASE_JWT_ALGORITHM: str = "auto"
 
     # AI Provider Configuration (Phase 5 & Phase 10.4: Google Gemini / OpenAI)
     AI_PROVIDER: Union[str, None] = "openai"
@@ -98,7 +98,7 @@ class Settings(BaseSettings):
         """Return configured AI model or provider default."""
         if self.effective_ai_provider == "gemini":
             if not self.AI_MODEL or self.AI_MODEL in ("gpt-4o-mini", "default"):
-                return "gemini-1.5-flash"
+                return "gemini-3.5-flash-lite"
             return self.AI_MODEL
         return self.AI_MODEL or "gpt-4o-mini"
 

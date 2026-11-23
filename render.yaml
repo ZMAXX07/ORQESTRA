@@ -30,7 +30,7 @@ services:
       - key: SUPABASE_JWT_ISSUER
         sync: false
       - key: SUPABASE_JWT_ALGORITHM
-        value: ES256
+        sync: false
       - key: AI_PROVIDER
         value: gemini
       - key: GEMINI_API_KEY

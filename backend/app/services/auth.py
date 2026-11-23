@@ -71,6 +71,17 @@ class TokenVerificationService:
             logger.warning("Token algorithm rejected: 'none' or missing")
             raise AuthenticationError("Invalid token algorithm: unsigned tokens not permitted", code="INVALID_ALGORITHM")
 
+        # Check configured algorithm restriction if set (auto/none/empty allows any supported algorithm)
+        configured_alg = (self.settings.SUPABASE_JWT_ALGORITHM or "").strip()
+        expected_alg = None if configured_alg.lower() in ("auto", "any", "none", "") else configured_alg
+
+        if expected_alg and alg != expected_alg:
+            logger.warning(f"JWT algorithm mismatch: token has {alg}, expected {expected_alg}")
+            raise AuthenticationError(
+                f"Invalid token algorithm: expected {expected_alg}",
+                code="INVALID_ALGORITHM",
+            )
+
         # Determine verification key/secret based on algorithm and configuration
         secret_or_key: Any = None
         allowed_algorithms = [alg]
@@ -94,13 +105,6 @@ class TokenVerificationService:
                 raise AuthenticationError("Failed to resolve public signing key", code="INVALID_TOKEN") from e
 
         elif alg in SUPPORTED_SYMMETRIC_ALGORITHMS:
-            expected_alg = self.settings.SUPABASE_JWT_ALGORITHM
-            if expected_alg and alg != expected_alg:
-                logger.warning(f"Symmetric algorithm mismatch: token has {alg}, expected {expected_alg}")
-                raise AuthenticationError(
-                    f"Invalid token algorithm: expected {expected_alg}",
-                    code="INVALID_ALGORITHM",
-                )
             secret = self.settings.SUPABASE_JWT_SECRET
             if not secret:
                 logger.error("SUPABASE_JWT_SECRET is not configured on the server")
