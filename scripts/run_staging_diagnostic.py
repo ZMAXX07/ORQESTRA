@@ -832,8 +832,11 @@ def run_local_disposable_diagnostic(
     runs the complete diagnostic, and shuts down the cluster cleanly.
     """
     # Import local staging cluster utilities
+    repo_root = WORKSPACE_ROOT.parent
     if str(WORKSPACE_ROOT) not in sys.path:
         sys.path.insert(0, str(WORKSPACE_ROOT))
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
 
     try:
         from backend.app.tests import manage_staging_db, run_migrations

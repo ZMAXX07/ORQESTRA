@@ -159,16 +159,32 @@ Orqestra/
 │   │   ├── 20261023000001_operations_transactions.sql
 │   │   ├── 20261023000002_realtime_publications.sql
 │   │   ├── 20261023000003_invoices_and_allocation.sql
-│   │   └── 20261023000004_invoice_snapshots_and_constraints.sql
+│   │   ├── 20261023000004_invoice_snapshots_and_constraints.sql
+│   │   ├── 20261115000001_remediate_adjust_stock_atomic.sql
+│   │   └── 20261122000001_harden_trigger_function_acls.sql
 │   └── seed.sql                 # Reference development seed notes
-├── docs/
+├── docs/                        # Architecture, runbooks, and audit documentation
 │   ├── architecture.md          # Architecture and database design
-│   ├── security.md              # Security controls and RLS design
-│   └── testing.md               # Testing guide and verification status
+│   ├── testing.md               # Testing guide and verification status
+│   ├── database/                # Schema reconciliation and migration guides
+│   ├── deployment/              # Production & staging runbooks and onboarding guides
+│   ├── development-reports/     # Historical phase release reports and trackers
+│   └── security/                # Security audits, RLS integrity, and access controls
+├── scripts/                     # Staging test runners, verification suites, and hash manifests
+│   ├── README.md                # Scripts documentation and security invariants
+│   ├── run_phase_4t_remote.py   # Dedicated remote/local staging functional runner
+│   ├── test_runner_phase_4t.py  # Comprehensive runner security verification suite
+│   ├── run_staging_diagnostic.py# Staging catalog and schema diagnostic runner
+│   ├── PHASE_4T_HARDENED_FUNCTIONAL_TEST.sql # Approved transactional functional SQL
+│   ├── PHASE_4T_APPROVED_HASHES.json         # Cryptographic hash manifest
+│   └── PHASE_4L_CANONICAL_DIAGNOSTIC_1.sql   # Canonical diagnostic queries
+├── .env.example                 # Root environment template
 ├── .gitignore                   # Git exclusion rules
-├── README.md                    # Project documentation
+├── Procfile                     # Process start configuration
 ├── pytest.ini                   # Root pytest configuration
-└── .env.example                 # Root environment template
+├── README.md                    # Project documentation
+├── render.yaml                  # Render deployment blueprint (FastAPI backend)
+└── vercel.json                  # Vercel deployment blueprint (React frontend)
 ```
 
 ---

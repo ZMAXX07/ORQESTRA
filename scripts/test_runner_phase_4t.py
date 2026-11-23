@@ -78,8 +78,11 @@ import psycopg
 from psycopg import pq
 
 workspace_root = pathlib.Path(__file__).resolve().parent
+repo_root = workspace_root.parent
 if str(workspace_root) not in sys.path:
     sys.path.insert(0, str(workspace_root))
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
 
 import run_phase_4t_remote as runner
 import run_staging_diagnostic as diagnostic
