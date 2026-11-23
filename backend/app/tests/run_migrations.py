@@ -1,12 +1,14 @@
 """Chronological migration runner for Orqestra disposable local PostgreSQL staging.
 
-Applies all 6 SQL migrations in sequence against the verified disposable database:
+Applies all 8 SQL migrations in sequence against the verified disposable database:
 1. 20261022000001_core_schema.sql
 2. 20261022000002_row_level_security.sql
 3. 20261023000001_operations_transactions.sql
 4. 20261023000002_realtime_publications.sql
 5. 20261023000003_invoices_and_allocation.sql
 6. 20261023000004_invoice_snapshots_and_constraints.sql
+7. 20261115000001_remediate_adjust_stock_atomic.sql
+8. 20261122000001_harden_trigger_function_acls.sql
 
 Features:
 - Validates host, database name, and clean state prior to execution.
@@ -42,6 +44,8 @@ MIGRATION_SEQUENCE = [
     "20261023000002_realtime_publications.sql",
     "20261023000003_invoices_and_allocation.sql",
     "20261023000004_invoice_snapshots_and_constraints.sql",
+    "20261115000001_remediate_adjust_stock_atomic.sql",
+    "20261122000001_harden_trigger_function_acls.sql",
 ]
 
 SUPABASE_AUTH_PREAMBLE = """
@@ -83,9 +87,11 @@ $$ LANGUAGE sql STABLE;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA auth TO anon, authenticated, service_role, postgres;
 
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
+-- Broad public default routine grant omitted: all routine ACLs must be established strictly by migrations.
 """
 
 
@@ -113,7 +119,7 @@ def preflight(url: str):
 
 
 def apply_migrations():
-    """Applies all 6 migrations in topological order."""
+    """Applies all 7 migrations in topological order."""
     url = manage_staging_db.get_conn_url()
     if not url:
         raise RuntimeError("No staging database connection file found.")
@@ -153,10 +159,12 @@ def apply_migrations():
                     print(f"MIGRATION_FAILED: {m_name} - {str(e)}")
                     raise
 
-            # Grant public schema permissions to Supabase test roles
-            cur.execute("GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;")
-            cur.execute("GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;")
-            cur.execute("GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;")
+            # Grant public schema table and sequence permissions to Supabase test roles.
+            # Post-migration routine grants are omitted: all routine ACLs must be established strictly by migrations.
+            cur.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;")
+            cur.execute("GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;")
+            cur.execute("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;")
+            cur.execute("GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;")
 
     return results
 

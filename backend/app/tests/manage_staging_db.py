@@ -218,6 +218,39 @@ def get_conn_url(validate: bool = True, timeout: float = DEFAULT_CONNECT_TIMEOUT
     return url
 
 
+def is_local_loopback_url(url: str | None) -> bool:
+    """Return True if url targets a local loopback address (localhost, 127.0.0.1, ::1)."""
+    if not url:
+        return False
+    try:
+        from urllib.parse import urlsplit
+        parsed = urlsplit(url)
+        hostname = (parsed.hostname or "").lower()
+        return hostname in ("localhost", "127.0.0.1", "::1")
+    except Exception:
+        return False
+
+
+def get_local_staging_url(validate: bool = True) -> str | None:
+    """Resolve database URL strictly for local integration test suites.
+
+    Prioritizes LOCAL_DATABASE_URL, then STAGING_DATABASE_URL / ORQESTRA_STAGING_DATABASE_URL
+    ONLY if they target a local loopback host. If an environment variable targets an external/remote
+    host (e.g., Supabase pooler), it is ignored unless ALLOW_REMOTE_STAGING_TESTS=1 is explicitly set.
+    Falls back to ephemeral local pgserver cluster via get_conn_url(validate=validate).
+    """
+    for env_var in ("LOCAL_DATABASE_URL", "STAGING_DATABASE_URL", "ORQESTRA_STAGING_DATABASE_URL"):
+        val = os.getenv(env_var)
+        if val:
+            if is_local_loopback_url(val):
+                return val
+            if os.getenv("ALLOW_REMOTE_STAGING_TESTS") == "1":
+                return val
+
+    return get_conn_url(validate=validate)
+
+
+
 def verify_status():
     """Verifies that the server is running, the database exists, and is empty."""
     import psycopg

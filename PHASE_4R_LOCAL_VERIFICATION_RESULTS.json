@@ -1,0 +1,247 @@
+{
+  "verdict": "LOCAL PASS",
+  "sql_script_path": "C:\\Users\\aslam\\Desktop\\ORQESTRA\\PHASE_4R_CORRECTED_FUNCTIONAL_TEST.sql",
+  "sql_script_sha256": "32bd656e4c05132cf38b61c0a623bfc14c0837dd08c574de6da97f237b977102",
+  "pg_version": "PostgreSQL 16.2 on x86_64-pc-mingw64, compiled by gcc.exe (x86_64-posix-seh-rev2, Built by MinGW-W64 project) 12.2.0, 64-bit",
+  "execution_duration_ms": 151.1167999706231,
+  "notices": [
+    "there is already a transaction in progress",
+    "=====================================================",
+    " ORQESTRA PHASE 4R: AUTHENTICATED FUNCTIONAL TEST SUITE",
+    "=====================================================",
+    "Setup complete: Full tenancy isolation verified across Business A and Business B.",
+    "TEST 1 PASSED: Authorized restock (+10 -> 30) verified across inventory, movements, and audit_logs",
+    "TEST 2 PASSED: Authorized deduction (-5 -> 25) verified across inventory, movements, and audit_logs",
+    "TEST 3 PASSED: Zero quantity rejected with SQLSTATE P0001; zero state mutation",
+    "TEST 4 PASSED: Overdraft rejected with SQLSTATE P0001; inventory unchanged at 25",
+    "TEST 5 PASSED: Actor identity mismatch caught with SQLSTATE P0001",
+    "TEST 6 PASSED: Staff role unauthorized execution rejected with SQLSTATE P0001",
+    "TEST 7 PASSED: Cross-tenant product mismatch caught with SQLSTATE P0001",
+    "TEST 8 PASSED: Unauthorized business access caught with SQLSTATE P0001; zero state mutation",
+    "=====================================================",
+    " ALL 8 FUNCTIONAL & SECURITY TESTS PASSED WITH 100% COMPLIANCE",
+    "====================================================="
+  ],
+  "residual_counts": {
+    "businesses": 0,
+    "business_members": 0,
+    "products": 0,
+    "inventory": 0,
+    "stock_movements": 0,
+    "audit_logs": 0
+  },
+  "policies": [
+    {
+      "table_name": "audit_logs",
+      "policy_name": "audit_logs_insert_member",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "with_check_expr": "has_business_role(business_id, auth.uid(), 'staff'::app_role)"
+    },
+    {
+      "table_name": "audit_logs",
+      "policy_name": "audit_logs_select_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'admin'::app_role)",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "business_members",
+      "policy_name": "business_members_delete_owner_or_self",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(has_business_role(business_id, auth.uid(), 'owner'::app_role) OR ((user_id = auth.uid()) AND (role <> 'owner'::app_role)))",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "business_members",
+      "policy_name": "business_members_insert_authorized",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "with_check_expr": "(((role = 'staff'::app_role) AND has_business_role(business_id, auth.uid(), 'admin'::app_role)) OR ((role = ANY (ARRAY['admin'::app_role, 'owner'::app_role])) AND has_business_role(business_id, auth.uid(), 'owner'::app_role)))"
+    },
+    {
+      "table_name": "business_members",
+      "policy_name": "business_members_select_colleagues",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((user_id = auth.uid()) OR has_business_role(business_id, auth.uid(), 'staff'::app_role))",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "business_members",
+      "policy_name": "business_members_update_owner",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'owner'::app_role)",
+      "with_check_expr": "has_business_role(business_id, auth.uid(), 'owner'::app_role)"
+    },
+    {
+      "table_name": "businesses",
+      "policy_name": "businesses_delete_owner",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(id, auth.uid(), 'owner'::app_role)",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "businesses",
+      "policy_name": "businesses_insert_authenticated",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "with_check_expr": "(auth.uid() IS NOT NULL)"
+    },
+    {
+      "table_name": "businesses",
+      "policy_name": "businesses_select_member",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(id, auth.uid(), 'staff'::app_role)",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "businesses",
+      "policy_name": "businesses_update_owner",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(id, auth.uid(), 'owner'::app_role)",
+      "with_check_expr": "has_business_role(id, auth.uid(), 'owner'::app_role)"
+    },
+    {
+      "table_name": "inventory",
+      "policy_name": "inventory_delete_owner",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'owner'::app_role)",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "inventory",
+      "policy_name": "inventory_insert_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "with_check_expr": "has_business_role(business_id, auth.uid(), 'admin'::app_role)"
+    },
+    {
+      "table_name": "inventory",
+      "policy_name": "inventory_select_member",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'staff'::app_role)",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "inventory",
+      "policy_name": "inventory_update_admin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'admin'::app_role)",
+      "with_check_expr": "has_business_role(business_id, auth.uid(), 'admin'::app_role)"
+    },
+    {
+      "table_name": "products",
+      "policy_name": "products_delete_owner",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'owner'::app_role)",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "products",
+      "policy_name": "products_insert_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "with_check_expr": "has_business_role(business_id, auth.uid(), 'admin'::app_role)"
+    },
+    {
+      "table_name": "products",
+      "policy_name": "products_select_member",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'staff'::app_role)",
+      "with_check_expr": null
+    },
+    {
+      "table_name": "products",
+      "policy_name": "products_update_admin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'admin'::app_role)",
+      "with_check_expr": "has_business_role(business_id, auth.uid(), 'admin'::app_role)"
+    },
+    {
+      "table_name": "stock_movements",
+      "policy_name": "stock_movements_insert_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "with_check_expr": "has_business_role(business_id, auth.uid(), 'admin'::app_role)"
+    },
+    {
+      "table_name": "stock_movements",
+      "policy_name": "stock_movements_select_member",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "has_business_role(business_id, auth.uid(), 'staff'::app_role)",
+      "with_check_expr": null
+    }
+  ],
+  "function_metadata": {
+    "name": "adjust_stock_atomic",
+    "identity_args": "p_business_id uuid, p_product_id uuid, p_quantity_change integer, p_movement_type stock_movement_type, p_notes text, p_user_id uuid",
+    "result_type": "TABLE(inventory_id uuid, product_id uuid, new_quantity integer, movement_id uuid)",
+    "is_security_definer": true,
+    "config": [
+      "search_path=public, pg_temp"
+    ],
+    "anon_can_exec": false,
+    "auth_can_exec": true,
+    "srv_can_exec": true
+  }
+}

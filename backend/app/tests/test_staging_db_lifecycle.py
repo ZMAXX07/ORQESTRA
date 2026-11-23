@@ -154,3 +154,19 @@ def test_database_skip_clean_when_server_unavailable(tmp_path, monkeypatch):
 
     # When no local PostgreSQL server is active, resolved_url must be None
     assert resolved_url is None
+
+
+def test_remote_staging_database_url_safely_ignored_by_default(tmp_path, monkeypatch):
+    """Verify that when STAGING_DATABASE_URL points to a remote host, get_local_staging_url ignores it."""
+    remote_url = "postgresql://postgres.vclkeubwpiyhuvprvngx:secret@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres"
+    monkeypatch.setenv("STAGING_DATABASE_URL", remote_url)
+    monkeypatch.delenv("ALLOW_REMOTE_STAGING_TESTS", raising=False)
+    non_existent_conn = tmp_path / "non_existent_staging_conn.txt"
+    monkeypatch.setattr(manage_staging_db, "CONN_FILE", non_existent_conn)
+
+    assert manage_staging_db.get_local_staging_url(validate=True) is None
+
+    # When explicitly opted in via ALLOW_REMOTE_STAGING_TESTS=1
+    monkeypatch.setenv("ALLOW_REMOTE_STAGING_TESTS", "1")
+    assert manage_staging_db.get_local_staging_url(validate=False) == remote_url
+

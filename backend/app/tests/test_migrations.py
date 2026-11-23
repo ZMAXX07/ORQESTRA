@@ -295,3 +295,33 @@ def test_phase5_1_invoice_snapshots_and_order_uniqueness():
     assert "LEFT JOIN public.products" in content
     assert "'pdf_storage_path', v_existing_invoice.pdf_storage_path" in content
 
+
+def test_phase4b_remediate_adjust_stock_atomic_migration():
+    """Verify Phase 4B patch migration remediates PL/pgSQL 42702 ambiguity with table qualification."""
+    patch_path = os.path.join(MIGRATIONS_DIR, "20261115000001_remediate_adjust_stock_atomic.sql")
+    assert os.path.exists(patch_path), f"Patch migration {patch_path} does not exist"
+    with open(patch_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # 1. Variable conflict protection and table qualification
+    assert "#variable_conflict error" in content
+    assert "WHERE inventory.business_id = p_business_id AND inventory.product_id = p_product_id" in content
+    assert "WHERE products.id = p_product_id AND products.business_id = p_business_id" in content
+
+    # 2. Function declaration and return table
+    assert "FUNCTION public.adjust_stock_atomic" in content
+    assert "RETURNS TABLE (" in content
+    assert "inventory_id UUID" in content
+    assert "product_id UUID" in content
+    assert "new_quantity INT" in content
+    assert "movement_id UUID" in content
+
+    # 3. Security definer and search path
+    assert "SECURITY DEFINER" in content
+    assert "SET search_path = public, pg_temp" in content
+
+    # 4. Permissions lockdown
+    assert "REVOKE EXECUTE ON FUNCTION public.adjust_stock_atomic(UUID, UUID, INT, stock_movement_type, TEXT, UUID) FROM anon, PUBLIC;" in content
+    assert "GRANT EXECUTE ON FUNCTION public.adjust_stock_atomic(UUID, UUID, INT, stock_movement_type, TEXT, UUID) TO authenticated, service_role;" in content
+
+

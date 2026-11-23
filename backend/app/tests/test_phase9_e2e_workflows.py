@@ -30,17 +30,18 @@ from backend.app.core.config import Settings
 from backend.app.tests.test_jwt_verification import TEST_SECRET, create_token
 from backend.app.tests import manage_staging_db
 
-ENV_DB_URL = os.getenv("STAGING_DATABASE_URL") or os.getenv("ORQESTRA_STAGING_DATABASE_URL")
-STAGING_DB_URL = ENV_DB_URL or manage_staging_db.get_conn_url(validate=True)
+STAGING_DB_URL = manage_staging_db.get_local_staging_url(validate=True)
 
 pytestmark = pytest.mark.skipif(
     not STAGING_DB_URL,
-    reason="Local PostgreSQL staging instance is not running."
+    reason="Local PostgreSQL staging instance is not running (remote staging URLs require ALLOW_REMOTE_STAGING_TESTS=1)."
 )
 
 
 @pytest.fixture(scope="module")
 def db_conn():
+    if not manage_staging_db.is_local_loopback_url(STAGING_DB_URL) and os.getenv("ALLOW_REMOTE_STAGING_TESTS") != "1":
+        pytest.skip("Refusing to run E2E workflows against non-local database without ALLOW_REMOTE_STAGING_TESTS=1.")
     import psycopg
     conn = psycopg.connect(
         STAGING_DB_URL,

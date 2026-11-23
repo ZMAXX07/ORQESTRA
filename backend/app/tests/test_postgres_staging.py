@@ -34,8 +34,7 @@ import pytest
 
 from backend.app.tests import manage_staging_db
 
-ENV_DB_URL = os.getenv("STAGING_DATABASE_URL") or os.getenv("ORQESTRA_STAGING_DATABASE_URL")
-STAGING_DB_URL = ENV_DB_URL or manage_staging_db.get_conn_url(validate=True)
+STAGING_DB_URL = manage_staging_db.get_local_staging_url(validate=True)
 
 
 def sanitize_db_url(url: str) -> str:
@@ -194,7 +193,7 @@ def synthetic_business(staging_connection):
 # ------------------------------------------------------------------------------
 
 def test_scenario_01_clean_migration_execution(staging_connection):
-    """Scenario 1: Verify all 6 SQL migrations apply cleanly in order without DDL error."""
+    """Scenario 1: Verify all 7 SQL migrations apply cleanly in order without DDL error."""
     migrations_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
         "supabase",
@@ -207,10 +206,13 @@ def test_scenario_01_clean_migration_execution(staging_connection):
         # Reset public schema to verify fresh clean execution from an empty state
         cur.execute("DROP SCHEMA IF EXISTS public CASCADE;")
         cur.execute("CREATE SCHEMA public;")
-        cur.execute("GRANT ALL ON SCHEMA public TO postgres, public, anon, authenticated, service_role;")
-        cur.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;")
-        cur.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;")
-        cur.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;")
+        cur.execute("GRANT ALL ON SCHEMA public TO postgres, service_role;")
+        cur.execute("GRANT USAGE ON SCHEMA public TO anon, authenticated;")
+        cur.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;")
+        cur.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;")
+        cur.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO authenticated;")
+        cur.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;")
+        # Broad public default routine grant omitted: all routine ACLs must be established strictly by migrations.
 
         for m_file in migration_files:
             file_path = os.path.join(migrations_dir, m_file)
@@ -219,10 +221,12 @@ def test_scenario_01_clean_migration_execution(staging_connection):
             # Execute migration DDL
             cur.execute(sql_content)
 
-        # Grant table permissions created during migrations to test roles
-        cur.execute("GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;")
-        cur.execute("GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;")
-        cur.execute("GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;")
+        # Grant table and sequence permissions created during migrations to test roles.
+        # Routine grants are omitted: all routine ACLs are established strictly by migrations.
+        cur.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;")
+        cur.execute("GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;")
+        cur.execute("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;")
+        cur.execute("GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;")
 
         # Assert all 10 core tables exist in PostgreSQL information_schema
         cur.execute(
@@ -645,3 +649,224 @@ def test_scenario_12_duplicate_historical_invoice_detection(staging_connection, 
         duplicates = cur.fetchall()
         # Assert no duplicates exist in current verified state
         assert len(duplicates) == 0
+
+
+def test_scenario_13_adjust_stock_atomic_remediation(staging_connection, synthetic_business):
+    """Scenario 13: Independently verify adjust_stock_atomic remediation against real PostgreSQL.
+
+    Tests:
+    1. Positive stock adjustment (+10 units).
+    2. Negative stock adjustment (-5 units).
+    3. Adjustment with zero quantity (rejected).
+    4. Insufficient stock / negative quantity prevention (rejected).
+    5. Nonexistent product (rejected).
+    6. Mandatory audit reason validation (< 3 chars rejected).
+    7. Unauthorized / cross-business product (rejected).
+    8. Concurrent stock adjustments on separate connections.
+    9. Transaction rollback on error.
+    10. Return values and existing approve_order_atomic compatibility.
+    """
+    print("\n[T13] Starting scenario 13 setup...", flush=True)
+    biz_id = synthetic_business["business_id"]
+    user_id = synthetic_business["user_id"]
+
+    prod_id = str(uuid.uuid4())
+
+    with staging_connection.cursor() as cur:
+        print("[T13] Inserting test product and inventory...", flush=True)
+        # Setup product and inventory with baseline 20 units
+        cur.execute(
+            "INSERT INTO products (id, business_id, sku, name, unit_price) "
+            "VALUES (%s, %s, 'SKU-REMEDY', 'Remedy Widget', 50.00);",
+            (prod_id, biz_id)
+        )
+        cur.execute(
+            "INSERT INTO inventory (business_id, product_id, quantity_on_hand) "
+            "VALUES (%s, %s, 20) RETURNING id;",
+            (biz_id, prod_id)
+        )
+        inv_id = str(cur.fetchone()[0])
+
+        # Configure session as business owner/admin
+        cur.execute("SET role = 'authenticated';")
+        cur.execute(f"SET request.jwt.claim.sub = '{user_id}';")
+
+        print("[T13] 1. Positive stock adjustment...", flush=True)
+        # 1. Positive stock adjustment (+10 units) -> 30
+        cur.execute(
+            "SELECT inventory_id, product_id, new_quantity, movement_id "
+            "FROM public.adjust_stock_atomic(%s, %s, 10, 'restock', 'Restock shipment received', %s);",
+            (biz_id, prod_id, user_id)
+        )
+        res = cur.fetchone()
+        assert str(res[0]) == inv_id
+        assert str(res[1]) == prod_id
+        assert res[2] == 30
+        mvt_1_id = str(res[3])
+        print("[T13] PASS 1: Positive adjustment succeeded (+10 -> 30)", flush=True)
+
+        # Verify stock_movements ledger entry
+        cur.execute("SELECT quantity_change, movement_type, notes FROM stock_movements WHERE id = %s;", (mvt_1_id,))
+        mvt_row = cur.fetchone()
+        assert mvt_row[0] == 10
+        assert mvt_row[1] == 'restock'
+        assert mvt_row[2] == 'Restock shipment received'
+
+        print("[T13] 2. Negative stock adjustment...", flush=True)
+        # 2. Negative stock adjustment (-5 units) -> 25
+        cur.execute(
+            "SELECT inventory_id, product_id, new_quantity, movement_id "
+            "FROM public.adjust_stock_atomic(%s, %s, -5, 'adjustment', 'Damaged items written off', %s);",
+            (biz_id, prod_id, user_id)
+        )
+        res2 = cur.fetchone()
+        assert res2[2] == 25
+        print("[T13] PASS 2: Negative adjustment succeeded (-5 -> 25)", flush=True)
+
+        print("[T13] 3. Zero quantity check...", flush=True)
+        # 3. Adjustment with zero quantity must fail
+        with pytest.raises(Exception) as exc_zero:
+            cur.execute(
+                "SELECT * FROM public.adjust_stock_atomic(%s, %s, 0, 'adjustment', 'Zero adjustment test', %s);",
+                (biz_id, prod_id, user_id)
+            )
+        assert "non-zero" in str(exc_zero.value).lower()
+        print("[T13] PASS 3: Zero quantity rejected", flush=True)
+
+        print("[T13] 4. Insufficient stock check...", flush=True)
+        # 4. Insufficient stock (would result in negative quantity: 25 - 30 = -5) must fail
+        with pytest.raises(Exception) as exc_neg:
+            cur.execute(
+                "SELECT * FROM public.adjust_stock_atomic(%s, %s, -30, 'adjustment', 'Excessive deduction', %s);",
+                (biz_id, prod_id, user_id)
+            )
+        assert "negative quantity" in str(exc_neg.value).lower()
+
+        # Verify quantity_on_hand remained strictly 25
+        cur.execute("SELECT quantity_on_hand FROM inventory WHERE id = %s;", (inv_id,))
+        assert cur.fetchone()[0] == 25
+        print("[T13] PASS 4: Insufficient stock rejected", flush=True)
+
+        print("[T13] 5. Nonexistent product check...", flush=True)
+        # 5. Nonexistent product must fail
+        random_prod = str(uuid.uuid4())
+        with pytest.raises(Exception) as exc_nonexistent:
+            cur.execute(
+                "SELECT * FROM public.adjust_stock_atomic(%s, %s, 5, 'restock', 'Ghost product restock', %s);",
+                (biz_id, random_prod, user_id)
+            )
+        assert "does not belong to business" in str(exc_nonexistent.value).lower()
+        print("[T13] PASS 5: Nonexistent product rejected", flush=True)
+
+        print("[T13] 6. Audit reason validation...", flush=True)
+        # 6. Audit reason validation (< 3 characters) must fail
+        with pytest.raises(Exception) as exc_audit:
+            cur.execute(
+                "SELECT * FROM public.adjust_stock_atomic(%s, %s, 5, 'restock', 'no', %s);",
+                (biz_id, prod_id, user_id)
+            )
+        assert "mandatory audit reason" in str(exc_audit.value).lower()
+        print("[T13] PASS 6: Short audit reason rejected", flush=True)
+
+        print("[T13] 7. Cross-business product check...", flush=True)
+        # 7. Cross-business product rejection
+        biz_other = str(uuid.uuid4())
+        cur.execute("INSERT INTO businesses (id, name, slug) VALUES (%s, 'Other Biz', %s);", (biz_other, f"test-oth-{biz_other[:8]}"))
+        prod_other = str(uuid.uuid4())
+        cur.execute(
+            "INSERT INTO products (id, business_id, sku, name, unit_price) "
+            "VALUES (%s, %s, 'SKU-OTH', 'Other Item', 10.00);",
+            (prod_other, biz_other)
+        )
+        with pytest.raises(Exception) as exc_cross:
+            cur.execute(
+                "SELECT * FROM public.adjust_stock_atomic(%s, %s, 5, 'restock', 'Cross biz restock', %s);",
+                (biz_id, prod_other, user_id)
+            )
+        assert "does not belong to business" in str(exc_cross.value).lower()
+        cur.execute("DELETE FROM products WHERE id = %s;", (prod_other,))
+        cur.execute("DELETE FROM businesses WHERE id = %s;", (biz_other,))
+        print("[T13] PASS 7: Cross-business product rejected", flush=True)
+
+        cur.execute("RESET role;")
+
+    print("[T13] 8. Concurrent adjustments...", flush=True)
+
+    # 8. Concurrent adjustments across separate connections
+    def do_adjustment(qty, note):
+        c = get_db_connection()
+        try:
+            with c.cursor() as cur_c:
+                cur_c.execute("SET role = 'authenticated';")
+                cur_c.execute(f"SET request.jwt.claim.sub = '{user_id}';")
+                cur_c.execute(
+                    "SELECT new_quantity FROM public.adjust_stock_atomic(%s, %s, %s, 'restock', %s, %s);",
+                    (biz_id, prod_id, qty, note, user_id)
+                )
+                return cur_c.fetchone()[0]
+        finally:
+            c.close()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f1 = executor.submit(do_adjustment, 5, "Concurrent restock batch 1")
+        f2 = executor.submit(do_adjustment, 10, "Concurrent restock batch 2")
+        q1 = f1.result()
+        q2 = f2.result()
+
+    with staging_connection.cursor() as cur:
+        # Final stock must be exactly 25 + 5 + 10 = 40
+        cur.execute("SELECT quantity_on_hand FROM inventory WHERE id = %s;", (inv_id,))
+        final_stock = cur.fetchone()[0]
+        assert final_stock == 40
+        assert {q1, q2} in ({30, 40}, {35, 40})
+        print("[T13] PASS 8: Concurrent adjustments succeeded without race conditions (final stock = 40)", flush=True)
+
+        print("[T13] 9. Transaction rollback on error...", flush=True)
+        # 9. Verify transaction rollback when exception occurs during adjust_stock_atomic
+        with pytest.raises(Exception):
+            cur.execute(
+                "SELECT * FROM public.adjust_stock_atomic(%s, %s, -999, 'adjustment', 'Fail rollback', %s);",
+                (biz_id, prod_id, user_id)
+            )
+        cur.execute("SELECT quantity_on_hand FROM inventory WHERE id = %s;", (inv_id,))
+        assert cur.fetchone()[0] == 40
+        print("[T13] PASS 9: Transaction rollback confirmed (stock remained 40)", flush=True)
+
+        print("[T13] 10. Verify approve_order_atomic compatibility...", flush=True)
+        # 10. Verify approve_order_atomic compatibility and atomic deduction
+        cur.execute("SET role = 'authenticated';")
+        cur.execute(f"SET request.jwt.claim.sub = '{user_id}';")
+
+        cust_id = str(uuid.uuid4())
+        cur.execute(
+            "INSERT INTO customers (id, business_id, name) VALUES (%s, %s, 'Customer Remedy');",
+            (cust_id, biz_id)
+        )
+        order_id = str(uuid.uuid4())
+        cur.execute(
+            "INSERT INTO orders (id, business_id, customer_id, order_number, status, subtotal, tax, total_amount) "
+            "VALUES (%s, %s, %s, 'ORD-REMEDY-01', 'pending_approval', 200.00, 0.00, 200.00);",
+            (order_id, biz_id, cust_id)
+        )
+        cur.execute(
+            "INSERT INTO order_items (id, business_id, order_id, product_id, quantity, unit_price, total_price) "
+            "VALUES (%s, %s, %s, %s, 4, 50.00, 200.00);",
+            (str(uuid.uuid4()), biz_id, order_id, prod_id)
+        )
+
+        # Call approve_order_atomic
+        cur.execute(
+            "SELECT order_id, order_status, total_items_deducted FROM public.approve_order_atomic(%s, %s, %s);",
+            (order_id, user_id, biz_id)
+        )
+        appr_res = cur.fetchone()
+        assert str(appr_res[0]) == order_id
+        assert appr_res[1] == 'approved'
+        assert appr_res[2] == 1
+
+        # Verify stock deducted from 40 to 36
+        cur.execute("SELECT quantity_on_hand FROM inventory WHERE id = %s;", (inv_id,))
+        assert cur.fetchone()[0] == 36
+        cur.execute("RESET role;")
+        print("[T13] PASS 10: approve_order_atomic compatibility verified (stock 40 -> 36)", flush=True)
+

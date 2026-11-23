@@ -1,0 +1,220 @@
+{
+  "verdict": "LOCAL PASS",
+  "phase": "PHASE_4T_F",
+  "sql_script_path": "C:\\Users\\aslam\\Desktop\\ORQESTRA\\PHASE_4T_HARDENED_FUNCTIONAL_TEST.sql",
+  "sql_script_sha256": "b1f21dc79f50153f2da9110ae14c8bc058b539c8ae0165b0044f7191389e8121",
+  "runner_path": "C:\\Users\\aslam\\Desktop\\ORQESTRA\\test_phase_4t_local.py",
+  "runner_sha256": "daec7639f9469e19935e122bcad5cd5643e8ff348bc195a2ca373fbf4415315e",
+  "pg_version": "PostgreSQL 16.2 on x86_64-pc-mingw64, compiled by gcc.exe (x86_64-posix-seh-rev2, Built by MinGW-W64 project) 12.2.0, 64-bit",
+  "execution_duration_ms": 152.1701000019675,
+  "acl_verification": {
+    "security_definer": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "anon_can_execute": false,
+    "authenticated_can_execute": true,
+    "service_role_can_execute": true,
+    "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+  },
+  "routine_acl_audit": [
+    {
+      "oid": 16730,
+      "signature": "adjust_stock_atomic(p_business_id uuid, p_product_id uuid, p_quantity_change integer, p_movement_type stock_movement_type, p_notes text, p_user_id uuid)",
+      "full_signature": "adjust_stock_atomic(uuid,uuid,integer,stock_movement_type,text,uuid)",
+      "name": "adjust_stock_atomic",
+      "args": "p_business_id uuid, p_product_id uuid, p_quantity_change integer, p_movement_type stock_movement_type, p_notes text, p_user_id uuid",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16750,
+      "signature": "allocate_invoice_atomic(p_business_id uuid, p_order_id uuid, p_user_id uuid, p_due_date date)",
+      "full_signature": "allocate_invoice_atomic(uuid,uuid,uuid,date)",
+      "name": "allocate_invoice_atomic",
+      "args": "p_business_id uuid, p_order_id uuid, p_user_id uuid, p_due_date date",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16732,
+      "signature": "approve_order_atomic(p_order_id uuid, p_user_id uuid, p_business_id uuid)",
+      "full_signature": "approve_order_atomic(uuid,uuid,uuid)",
+      "name": "approve_order_atomic",
+      "args": "p_order_id uuid, p_user_id uuid, p_business_id uuid",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16734,
+      "signature": "cancel_order_atomic(p_order_id uuid, p_user_id uuid, p_business_id uuid, p_reason text)",
+      "full_signature": "cancel_order_atomic(uuid,uuid,uuid,text)",
+      "name": "cancel_order_atomic",
+      "args": "p_order_id uuid, p_user_id uuid, p_business_id uuid, p_reason text",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16679,
+      "signature": "get_auth_user_id()",
+      "full_signature": "get_auth_user_id()",
+      "name": "get_auth_user_id",
+      "args": "",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16680,
+      "signature": "get_business_member_role(_business_id uuid, _user_id uuid)",
+      "full_signature": "get_business_member_role(uuid,uuid)",
+      "name": "get_business_member_role",
+      "args": "_business_id uuid, _user_id uuid",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16682,
+      "signature": "handle_new_business()",
+      "full_signature": "handle_new_business()",
+      "name": "handle_new_business",
+      "args": "",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16681,
+      "signature": "has_business_role(_business_id uuid, _user_id uuid, _required_role app_role)",
+      "full_signature": "has_business_role(uuid,uuid,app_role)",
+      "name": "has_business_role",
+      "args": "_business_id uuid, _user_id uuid, _required_role app_role",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16684,
+      "signature": "prevent_immutable_modification()",
+      "full_signature": "prevent_immutable_modification()",
+      "name": "prevent_immutable_modification",
+      "args": "",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    },
+    {
+      "oid": 16439,
+      "signature": "set_updated_at_timestamp()",
+      "full_signature": "set_updated_at_timestamp()",
+      "name": "set_updated_at_timestamp",
+      "args": "",
+      "anon_can_execute": false,
+      "authenticated_can_execute": true,
+      "service_role_can_execute": true,
+      "public_has_grant": false,
+      "proacl": "postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres"
+    }
+  ],
+  "fk_verification": {
+    "business_members_user_id_has_fk_to_auth": false,
+    "triggers_verified": [
+      "trg_on_business_created",
+      "trg_businesses_updated_at",
+      "trg_stock_movements_immutable",
+      "trg_audit_logs_immutable"
+    ]
+  },
+  "audit_connection_privileges": {
+    "current_user": "postgres",
+    "session_user": "postgres",
+    "rolsuper": true,
+    "rolbypassrls": true,
+    "table_owners": {
+      "audit_logs": "postgres",
+      "business_members": "postgres",
+      "businesses": "postgres",
+      "inventory": "postgres",
+      "products": "postgres",
+      "stock_movements": "postgres"
+    }
+  },
+  "scenario_results": {
+    "scenario_1": true,
+    "scenario_2": true,
+    "scenario_3": true,
+    "scenario_4": true,
+    "scenario_5": true,
+    "scenario_6": true,
+    "scenario_7": true,
+    "scenario_8": true
+  },
+  "manifest": {
+    "biz_a": "33ac3e08-10e6-4900-84df-01900410004c",
+    "biz_b": "2e03959b-55d8-413f-aa70-fcea0d3839bd",
+    "admin_a": "3bbed6ff-57b8-4d4b-b821-06391c26fcb2",
+    "admin_b": "aebe9ce4-0887-480d-be75-432f9f9d5991",
+    "staff_a": "8b2d3735-ab36-4f8f-9089-8ca1cbc2677b",
+    "prod_a": "e0370e08-dd1c-4909-ad32-eb568bc86426",
+    "prod_b": "edafe422-2046-4062-84f5-5ac816782a98",
+    "inv_a": "95c025ac-369b-451b-9c98-91c0cb83b7e4",
+    "inv_b": "25fd2a8c-898f-4854-bb78-186fe1153b4d",
+    "mvt_1": "fdb0823d-c017-472e-b931-6f5e8af427d6",
+    "mvt_2": "64bf1abf-fca6-434f-a97c-bbf341f3f322",
+    "audit_1": "d68195ae-5b1b-4f5a-ab12-6beadb6ebe28",
+    "audit_2": "166dbd57-5b03-4419-a882-425418e8f673"
+  },
+  "exact_id_counts": {
+    "businesses": 0,
+    "business_members": 0,
+    "products": 0,
+    "inventory": 0,
+    "stock_movements": 0,
+    "audit_logs": 0
+  },
+  "rollback_outcome": {
+    "client_tx_rolled_back": true,
+    "engine_status": "Clean (row state reverted; sequence/OID/WAL side-effects preserved)"
+  },
+  "notices": [
+    "=====================================================",
+    " ORQESTRA PHASE 4T: HARDENED FUNCTIONAL TEST SUITE",
+    "=====================================================",
+    "Setup complete: Full tenancy isolation verified across Business A and Business B.",
+    "TEST 1 PASSED: Authorized restock (+10 -> 30) verified across inventory, movements, and audit_logs",
+    "TEST 2 PASSED: Authorized deduction (-5 -> 25) verified across inventory, movements, and audit_logs",
+    "TEST 3 PASSED: Zero quantity rejected with SQLSTATE P0001; zero state mutation",
+    "TEST 4 PASSED: Overdraft rejected with SQLSTATE P0001; inventory unchanged at 25",
+    "TEST 5 PASSED: Actor identity mismatch caught with SQLSTATE P0001",
+    "TEST 6 PASSED: Staff role unauthorized execution rejected with SQLSTATE P0001",
+    "TEST 7 PASSED: Cross-tenant product mismatch caught with SQLSTATE P0001",
+    "TEST 8 PASSED: Unauthorized business access caught with SQLSTATE P0001; zero state mutation",
+    "MANIFEST_JSON:{\"biz_a\" : \"33ac3e08-10e6-4900-84df-01900410004c\", \"biz_b\" : \"2e03959b-55d8-413f-aa70-fcea0d3839bd\", \"admin_a\" : \"3bbed6ff-57b8-4d4b-b821-06391c26fcb2\", \"admin_b\" : \"aebe9ce4-0887-480d-be75-432f9f9d5991\", \"staff_a\" : \"8b2d3735-ab36-4f8f-9089-8ca1cbc2677b\", \"prod_a\" : \"e0370e08-dd1c-4909-ad32-eb568bc86426\", \"prod_b\" : \"edafe422-2046-4062-84f5-5ac816782a98\", \"inv_a\" : \"95c025ac-369b-451b-9c98-91c0cb83b7e4\", \"inv_b\" : \"25fd2a8c-898f-4854-bb78-186fe1153b4d\", \"mvt_1\" : \"fdb0823d-c017-472e-b931-6f5e8af427d6\", \"mvt_2\" : \"64bf1abf-fca6-434f-a97c-bbf341f3f322\", \"audit_1\" : \"d68195ae-5b1b-4f5a-ab12-6beadb6ebe28\", \"audit_2\" : \"166dbd57-5b03-4419-a882-425418e8f673\"}",
+    "=====================================================",
+    " ALL 8 FUNCTIONAL & SECURITY TESTS PASSED WITH 100% COMPLIANCE",
+    "====================================================="
+  ]
+}
