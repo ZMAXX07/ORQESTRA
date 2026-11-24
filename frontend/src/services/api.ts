@@ -86,9 +86,10 @@ export async function fetchHealthStatus(): Promise<HealthResponse> {
       throw err;
     }
     const rawMsg = err instanceof Error ? err.message : '';
+    const targetUrl = getApiBaseUrl() || 'http://127.0.0.1:8000';
     const friendlyMsg =
       rawMsg === 'Failed to fetch'
-        ? 'Unable to connect to Orqestra backend. Verify server is running on http://127.0.0.1:8000.'
+        ? `Unable to connect to Orqestra backend. Verify server is running on ${targetUrl}.`
         : rawMsg || 'Failed to connect to Orqestra backend. Verify server is running.';
     throw new ApiServiceError(friendlyMsg, 'CONNECTION_ERROR');
   }
