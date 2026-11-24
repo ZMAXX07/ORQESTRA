@@ -71,6 +71,23 @@ def create_application(settings: Settings | None = None) -> FastAPI:
     # Register safe, structured error handlers
     register_error_handlers(app)
 
+    # Friendly root info endpoint: GET /
+    @app.get(
+        "/",
+        status_code=status.HTTP_200_OK,
+        tags=["Root"],
+        summary="API Root Information",
+    )
+    async def root_index() -> dict[str, str]:
+        return {
+            "name": current_settings.APP_NAME,
+            "version": current_settings.APP_VERSION,
+            "environment": current_settings.ENVIRONMENT,
+            "status": "online",
+            "docs": "/docs",
+            "health": "/health",
+        }
+
     # Root health probe endpoint: GET /health
     @app.get(
         "/health",
