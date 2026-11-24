@@ -86,7 +86,15 @@ export async function fetchHealthStatus(): Promise<HealthResponse> {
       throw err;
     }
     const rawMsg = err instanceof Error ? err.message : '';
-    const targetUrl = getApiBaseUrl() || 'http://127.0.0.1:8000';
+    const isBrowserNonLocal =
+      typeof window !== 'undefined' &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1' &&
+      window.location.hostname !== '::1';
+    const fallbackUrl = isBrowserNonLocal
+      ? `${window.location.origin}/api`
+      : 'http://127.0.0.1:8000';
+    const targetUrl = getApiBaseUrl() || fallbackUrl;
     const friendlyMsg =
       rawMsg === 'Failed to fetch'
         ? `Unable to connect to Orqestra backend. Verify server is running on ${targetUrl}.`
